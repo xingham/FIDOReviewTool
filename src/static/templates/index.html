@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIDO Review Tool</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="bg-gray-50 text-black dark:bg-gray-900 dark:text-white">
+  <div class="toolbar flex justify-between items-center px-6 py-4 shadow bg-gray-800 text-white">
+    <div class="text-xl font-bold">FIDO Review Tool</div>
+    <div class="space-x-4">
+      <button onclick="toggleFlagForm()" class="hover:underline">🚩 Flag Issue</button>
+      <button onclick="showAdminPage()" class="hover:underline">🛠️ Admin</button>
+      <button onclick="showMainPage()" class="hover:underline">🏠 Home</button>
+      <button onclick="toggleTheme()" class="hover:underline">🌓 Toggle Theme</button>
+      <button onclick="logoutUser()" class="hover:underline">🔒 Logout</button>
+      <span id="welcomeUser" class="text-sm"></span>
+    </div>
+  </div>
+
+  <div id="loginPanel" class="mt-24 px-4 text-black dark:text-white animate-fade-in">
+    <h3 class="text-2xl font-bold mb-6 text-center">Welcome to the FIDO Review Tool</h3>
+    <label class="block mb-2">Name:</label>
+    <input type="text" id="loginName" class="w-full p-2 mb-4 border rounded bg-white text-black">
+    <div class="mb-4">
+      <label class="flex items-center mb-2 text-gray-800 dark:text-white">
+        <input type="radio" name="userRole" value="reviewer" class="mr-3">
+        <span>🧑 Reviewer</span>
+      </label>
+      <label class="flex items-center text-gray-800 dark:text-white">
+        <input type="radio" name="userRole" value="admin" class="mr-3">
+        <span>🛠️ Admin</span>
+      </label>
+    </div>
+    <button onclick="loginUser()" class="w-full mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 shadow">Login</button>
+  </div>
+
+  <div id="mainPage" style="display:none">
+    <div class="grid grid-cols-1 gap-6 max-w-2xl mx-auto mt-8">
+      <div class="p-6 bg-blue-100 hover:bg-blue-200 border-l-4 border-blue-500 rounded shadow-md transition">
+        <button class="text-blue-800 text-lg font-semibold w-full text-left" onclick="showQueueProjects('nonLicensed')">
+          📂 Non-licensed FIDO Review Projects
+        </button>
+      </div>
+      <div class="p-6 bg-green-100 hover:bg-green-200 border-l-4 border-green-500 rounded shadow-md transition">
+        <button class="text-green-800 text-lg font-semibold w-full text-left" onclick="showQueueProjects('licensed')">
+          📁 Licensed FIDO Review Projects
+        </button>
+      </div>
+      <div class="p-6 bg-red-100 hover:bg-red-200 border-l-4 border-red-500 rounded shadow-md transition">
+        <button class="text-red-800 text-lg font-semibold w-full text-left flex items-center" onclick="showQueueProjects('catq')">
+          <span class="inline-block w-5 h-5 mr-2 bg-center bg-contain" style="background-image:url('/mnt/data/6eccc1d1-54c6-4949-9383-48902aad7019.png')"></span>
+          CATQ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="adminPage" style="display:none">
+    <div class="max-w-xl mx-auto mt-8 p-6 bg-white dark:bg-gray-800 rounded shadow">
+      <h2 class="text-xl font-semibold mb-4">🛠️ Upload FIDO Project</h2>
+      <label for="projectQueue" class="block mb-2">Select Queue:</label>
+      <select id="projectQueue" class="w-full mb-4 p-2 border rounded">
+        <option value="nonLicensed">Non-licensed</option>
+        <option value="licensed">Licensed</option>
+        <option value="catq">CATQ</option>
+      </select>
+      <label for="fileUpload" class="block mb-2">Upload CSV File:</label>
+      <input type="file" id="fileUpload" accept=".csv" class="w-full mb-4">
+      <button onclick="handleUpload()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Upload Project</button>
+    </div>
+  </div>
+
+  <div id="flagForm" style="display:none" class="max-w-xl mx-auto mt-8 p-6 bg-white dark:bg-gray-800 rounded shadow">
+    <h2 class="text-xl font-semibold mb-4">🚩 Submit a Flag</h2>
+    <label class="block mb-2">Submitted by:</label>
+    <input type="text" id="flagSubmitter" class="w-full p-2 mb-4 border rounded text-black" placeholder="Your name">
+    <label class="block mb-2">FIDO:</label>
+    <input type="text" id="flagFido" class="w-full p-2 mb-4 border rounded text-black" placeholder="FIDO ID">
+    <label class="block mb-2">Issue:</label>
+    <textarea id="flagIssue" class="w-full p-2 mb-4 border rounded text-black" placeholder="Describe the issue"></textarea>
+    <button onclick="submitFlag()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Submit Flag</button>
+  </div>
+
+  <script>
+    // JavaScript functions for handling user interactions
+  </script>
+</body>
+</html>
