@@ -1,5 +1,2 @@
-streamlit
-pandas
-numpy
-tailwindcss
-```
+streamlit>=1.27.0
+pandas>=2.0.0
