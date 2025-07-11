@@ -6,25 +6,22 @@ st.title("FIDO Review Tool")
 # Initialize session state for user authentication and navigation
 if 'current_user' not in st.session_state:
     st.session_state.current_user = None
-if 'previous_page' not in st.session_state:
-    st.session_state.previous_page = None
-if 'current_page' not in st.session_state:
-    st.session_state.current_page = 'login'
+if 'page_history' not in st.session_state:
+    st.session_state.page_history = ['login']
 
 def navigate_to(page):
-    st.session_state.previous_page = st.session_state.current_page
-    st.session_state.current_page = page
+    if page not in st.session_state.page_history:
+        st.session_state.page_history.append(page)
     st.experimental_rerun()
 
 def show_back_button():
-    if st.session_state.previous_page:
-        col1, col2 = st.columns([1, 9])
-        with col1:
-            if st.button('← Back'):
-                temp = st.session_state.current_page
-                st.session_state.current_page = st.session_state.previous_page
-                st.session_state.previous_page = temp
-                st.experimental_rerun()
+    if len(st.session_state.page_history) > 1:
+        if st.button('← Back'):
+            st.session_state.page_history.pop()  # Remove current page
+            st.experimental_rerun()
+
+def get_current_page():
+    return st.session_state.page_history[-1] if st.session_state.page_history else 'login'
 
 # Function to display the login panel
 def show_login_panel():
@@ -44,12 +41,17 @@ def show_login_panel():
 def show_main_page():
     show_back_button()
     st.header("Main Page")
-    if st.button("Non-licensed FIDO Review Projects"):
-        navigate_to('nonlicensed')
-    if st.button("Licensed FIDO Review Projects"):
-        navigate_to('licensed')
-    if st.button("CATQ"):
-        navigate_to('catq')
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("Non-licensed FIDO Review Projects"):
+            navigate_to('nonlicensed')
+    with col2:
+        if st.button("Licensed FIDO Review Projects"):
+            navigate_to('licensed')
+    with col3:
+        if st.button("CATQ"):
+            navigate_to('catq')
 
 # Function to display the admin page
 def show_admin_page():
@@ -67,13 +69,15 @@ def show_admin_page():
         st.error("Access denied. Admins only.")
 
 # Main page routing logic
+current_page = get_current_page()
+
 if st.session_state.current_user:
-    if st.session_state.current_page == 'admin':
+    if current_page == 'admin':
         show_admin_page()
-    elif st.session_state.current_page == 'main':
+    elif current_page == 'main':
         show_main_page()
-    elif st.session_state.current_page in ['nonlicensed', 'licensed', 'catq']:
+    elif current_page in ['nonlicensed', 'licensed', 'catq']:
         show_back_button()
-        st.header(f"{st.session_state.current_page.title()} Projects")
+        st.header(f"{current_page.title()} Projects")
 else:
     show_login_panel()
