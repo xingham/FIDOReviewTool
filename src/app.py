@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import time  # Add this import
 
 # Set the title of the app
 st.title("FIDO Review Tool")
@@ -400,45 +401,45 @@ def show_upload_page():
     show_back_button('upload')
     st.header("📤 Upload New Project")
     
-    # File upload section
-    uploaded_file = st.file_uploader(
-        "Upload CSV File:", 
-        type="csv",
-        key="admin_upload"
-    )
+    # Project details section
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        # Project title input
+        project_title = st.text_input(
+            "Project Title:",
+            placeholder="Enter a descriptive title for this project",
+            key="upload_project_title"
+        )
+        
+        # File upload section
+        uploaded_file = st.file_uploader(
+            "Upload CSV File:", 
+            type="csv",
+            key="admin_upload"
+        )
+    
+    with col2:
+        # Queue selection
+        st.subheader("Project Type")
+        queue_type = st.radio(
+            "Select queue:",
+            ["Non-licensed", "Licensed"],
+            horizontal=False
+        )
     
     if uploaded_file:
-        st.success("File loaded successfully!")
+        st.success("✅ File loaded successfully!")
         
-        # Project details section
-        with st.form("project_details"):
-            st.subheader("Project Details")
-            
-            # Project title input
-            project_title = st.text_input(
-                "Project Title:",
-                placeholder="Enter a descriptive title for this project"
-            )
-            
-            # Queue selection
-            queue_type = st.radio(
-                "Select Project Type:",
-                ["Non-licensed", "Licensed"],
-                horizontal=True
-            )
-            
-            # Submit button
-            submit = st.form_submit_button("Upload Project")
-            
-            if submit:
-                if project_title:
-                    if handle_file_upload(uploaded_file, queue_type.lower(), project_title):
-                        st.success(f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue")
-                        # Clear form
-                        st.session_state.admin_upload = None
-                        st.rerun()
-                else:
-                    st.error("Please provide a project title")
+        if st.button("Upload Project", type="primary"):
+            if project_title:
+                if handle_file_upload(uploaded_file, queue_type.lower(), project_title):
+                    st.success(f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue")
+                    # Clear form after 2 seconds
+                    time.sleep(2)
+                    st.rerun()
+            else:
+                st.error("Please provide a project title")
 
 # Main page routing logic
 current_page = get_current_page()
@@ -446,6 +447,8 @@ current_page = get_current_page()
 if st.session_state.current_user:
     if current_page == 'admin':
         show_admin_page()
+    elif current_page == 'upload':  # Add this condition
+        show_upload_page()
     elif current_page == 'main':
         show_main_page()
     elif current_page in ['nonlicensed', 'licensed', 'catq']:
