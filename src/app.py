@@ -465,12 +465,23 @@ def show_project_selection_page(queue_type):
     project_stats = {}
     unique_projects = sorted(set(k.split('_')[1] for k in queue_files.keys()))
     
+    # Priority mapping
+    priority_map = {
+        'high': 'High Priority',
+        'medium': 'Medium Priority',
+        'low': 'Low Priority'
+    }
+    
     for project_name in unique_projects:
         project_files = {k: v for k, v in queue_files.items() 
                         if k.split('_')[1] == project_name}
         total_records = sum(len(df) for df in project_files.values())
         reviewed = sum(len(df[df['status'] == 'Reviewed']) for df in project_files.values())
-        priority = project_name.split('_')[-1].title()
+        
+        # Extract priority from project name and map to display value
+        priority_key = project_name.split('_')[-1].lower()
+        priority = priority_map.get(priority_key, 'Unknown Priority')
+        
         project_stats[project_name] = {
             'total': total_records,
             'reviewed': reviewed,
@@ -486,7 +497,7 @@ def show_project_selection_page(queue_type):
         selected_project = st.selectbox(
             "Choose a project:",
             options=list(project_stats.keys()),
-            format_func=lambda x: x.rsplit('_', 1)[0]  # Remove priority from display
+            format_func=lambda x: x.rsplit('_', 1)[0]  # Remove priority from display name
         )
     
     with col2:
@@ -494,11 +505,11 @@ def show_project_selection_page(queue_type):
             st.subheader("Project Statistics")
             stats = project_stats[selected_project]
             
-            # Display statistics in a card
+            # Display statistics in a card with properly formatted priority
             st.markdown(f"""
                 <div style='padding: 1rem; background-color: #1e3d59; border-radius: 0.5rem; color: white;'>
                     <h3>{selected_project.rsplit('_', 1)[0]}</h3>
-                    <p>Priority: {stats['priority']}</p>
+                    <p>Priority Level: {stats['priority']}</p>
                     <p>Total Records: {stats['total']}</p>
                     <p>Reviewed: {stats['reviewed']}</p>
                     <p>Progress: {stats['progress']:.1f}%</p>
