@@ -400,12 +400,6 @@ def show_upload_page():
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        project_title = st.text_input(
-            "Project Title:",
-            placeholder="Enter a descriptive title for this project",
-            key="upload_project_title"
-        )
-        
         uploaded_file = st.file_uploader(
             "Upload CSV File:", 
             type="csv",
@@ -429,18 +423,18 @@ def show_upload_page():
         }
     
     if uploaded_file:
+        # Get file name without extension
+        project_title = uploaded_file.name.rsplit('.', 1)[0]
         st.success("✅ File loaded successfully!")
+        st.info(f"Project Title: {project_title}")
         
         if st.button("Upload Project", type="primary"):
-            if project_title:
-                # Use mapped queue type for file storage
-                mapped_queue = queue_mapping[queue_type]
-                if handle_file_upload(uploaded_file, mapped_queue, project_title):
-                    st.success(f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue")
-                    time.sleep(2)
-                    st.rerun()
-            else:
-                st.error("Please provide a project title")
+            # Use mapped queue type for file storage
+            mapped_queue = queue_mapping[queue_type]
+            if handle_file_upload(uploaded_file, mapped_queue, project_title):
+                st.success(f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue")
+                time.sleep(2)
+                st.rerun()
 
 # Main page routing logic
 current_page = get_current_page()
