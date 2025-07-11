@@ -314,7 +314,12 @@ def show_queue_landing_page(queue_type):
     # Display projects in a grid
     cols = st.columns(2)
     for idx, (file_key, df) in enumerate(queue_files.items()):
-        _, filename, upload_date = file_key.split('_')
+        # Split the file key correctly
+        parts = file_key.split('_')
+        queue = parts[0]
+        filename = parts[1]
+        upload_date = '_'.join(parts[2:])  # Join remaining parts as upload date
+        
         total_records = len(df)
         reviewed = len(df[df['status'] == 'Reviewed'])
         
@@ -322,8 +327,8 @@ def show_queue_landing_page(queue_type):
             st.markdown(f"""
                 <div class="project-card">
                     <div class="project-title">{filename}</div>
-                    <p>Upload Date: {upload_date[:4]}/{upload_date[4:6]}/{upload_date[6:8]}</p>
-                    <p>Progress: {reviewed}/{total_records}</p>
+                    <p>Upload Date: {upload_date[:8]}</p>
+                    <p>Progress: {reviewed}/{total_records} records reviewed</p>
                 </div>
             """, unsafe_allow_html=True)
             
