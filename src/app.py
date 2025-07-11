@@ -17,8 +17,15 @@ def navigate_to(page):
 def show_back_button():
     if len(st.session_state.page_history) > 1:
         if st.button('← Back'):
-            st.session_state.page_history.pop()  # Remove current page
-            st.rerun()  # Updated from experimental_rerun()
+            previous_page = st.session_state.page_history[-2]  # Get previous page
+            if previous_page == 'login':
+                # Clear user session and go back to login
+                st.session_state.current_user = None
+                st.session_state.page_history = ['login']
+            else:
+                # Normal back navigation
+                st.session_state.page_history.pop()
+            st.rerun()
 
 def get_current_page():
     return st.session_state.page_history[-1] if st.session_state.page_history else 'login'
