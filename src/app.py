@@ -267,16 +267,29 @@ def show_queue_landing_page(queue_type):
     show_back_button(f"landing_{queue_type}")
     st.header(f"{queue_type.title()} Projects")
     
-    # Store current queue in session state
-    st.session_state.current_queue = queue_type
-    
-    # Filter and group files by project title
-    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
-                  if k.startswith(queue_type)}
+    if queue_type == "nonlicensed":
+        # Add project category selection
+        project_category = st.radio(
+            "Select Project Category:",
+            ["Project A", "Project B", "Project C"],  # Replace with your actual project categories
+            horizontal=True,
+            key="project_category_select"
+        )
+        
+        # Filter files by both queue type and project category
+        queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
+                      if k.startswith(queue_type) and k.split('_')[1] == project_category}
+        
+        st.subheader(f"📋 {project_category} Projects")
+    else:
+        # For other queue types, show all files
+        queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
+                      if k.startswith(queue_type)}
+        st.subheader("📋 Available Projects")
     
     if not queue_files:
-        st.info(f"No projects available in {queue_type} queue")
-        return  # Remove upload section here
+        st.info(f"No projects available in selected category")
+        return
 
     # Create project cards
     st.subheader("📋 Available Projects")
@@ -311,7 +324,7 @@ def show_queue_landing_page(queue_type):
         # Split the file key correctly
         parts = file_key.split('_')
         queue = parts[0]
-        project_title = parts[1]  # Now using project title instead of filename
+        project_title = parts[2] if queue_type == "nonlicensed" else parts[1]  # Adjust for category in non-licensed
         date_str = parts[-1][:8]
         formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
         
@@ -378,7 +391,7 @@ def show_upload_page():
             color: white;
             margin-bottom: 1rem;
         }
-        .upload-title {
+        .upload-title, .project-type {
             color: white;
             font-size: 1.2rem;
             font-weight: bold;
@@ -407,7 +420,7 @@ def show_upload_page():
         )
     
     with col2:
-        st.markdown('<div style="color: #1e3d59; font-weight: bold;">Project Type</div>', 
+        st.markdown('<div class="project-type">Project Type</div>', 
                    unsafe_allow_html=True)
         queue_type = st.radio(
             "Select queue:",
@@ -416,11 +429,16 @@ def show_upload_page():
             label_visibility="collapsed"
         )
         
-        # Map radio button selection to queue type
-        queue_mapping = {
-            "Non-licensed": "nonlicensed",
-            "Licensed": "licensed"
-        }
+        # Show project subtype selection if Non-licensed is selected
+        if queue_type == "Non-licensed":
+            st.markdown('<div class="project-type">Project Category</div>', 
+                       unsafe_allow_html=True)
+            project_category = st.radio(
+                "Select project category:",
+                ["Project A", "Project B", "Project C"],  # Replace with your actual project categories
+                key="project_category",
+                label_visibility="collapsed"
+            )
     
     if uploaded_file:
         # Get file name without extension
@@ -429,10 +447,24 @@ def show_upload_page():
         st.info(f"Project Title: {project_title}")
         
         if st.button("Upload Project", type="primary"):
-            # Use mapped queue type for file storage
+            # Map radio button selection to queue type
+            queue_mapping = {
+                "Non-licensed": "nonlicensed",
+                "Licensed": "licensed"
+            }
+            
             mapped_queue = queue_mapping[queue_type]
+            
+            # Add category to project title for Non-licensed projects
+            if queue_type == "Non-licensed":
+                project_title = f"{project_category}_{project_title}"
+            
             if handle_file_upload(uploaded_file, mapped_queue, project_title):
-                st.success(f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue")
+                success_message = (f"✅ Project '{project_title}' uploaded successfully to "
+                                 f"{queue_type} queue")
+                if queue_type == "Non-licensed":
+                    success_message += f" under {project_category}"
+                st.success(success_message)
                 time.sleep(2)
                 st.rerun()
 
