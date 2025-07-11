@@ -517,15 +517,12 @@ current_page = get_current_page()
 if st.session_state.current_user:
     if current_page == 'admin':
         show_admin_page()
-    elif current_page == 'upload':  # Add this condition
+    elif current_page == 'upload':
         show_upload_page()
     elif current_page == 'main':
         show_main_page()
     elif current_page in ['nonlicensed', 'licensed', 'catq']:
-        if st.session_state.selected_project:
-            show_queue_page(current_page)
-        else:
-            show_queue_landing_page(current_page)
+        show_project_selection_page(current_page)
     elif current_page.endswith('_review'):
         show_queue_page(current_page.split('_')[0])
 else:
