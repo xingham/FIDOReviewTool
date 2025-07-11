@@ -273,11 +273,10 @@ def show_queue_landing_page(queue_type):
                         if k.startswith(queue_type)]
         unique_projects = sorted(set(project_files)) if project_files else ["No projects available"]
         
-        # Add project selection
-        project_category = st.radio(
+        # Replace radio buttons with dropdown
+        project_category = st.selectbox(
             "Select Project:",
-            unique_projects,
-            horizontal=True,
+            options=unique_projects,
             key="project_category_select"
         )
         
