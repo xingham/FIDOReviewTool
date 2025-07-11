@@ -115,7 +115,8 @@ def show_main_page():
     # Add custom CSS for modern cards
     st.markdown("""
         <style>
-        .stButton > button {
+        /* Main menu card buttons */
+        [data-testid="stButton"] > button:not([kind="secondary"]) {
             background-color: #1e3d59;
             border-radius: 15px;
             padding: 2rem 1.5rem;
@@ -136,38 +137,30 @@ def show_main_page():
             background-image: linear-gradient(145deg, #1e3d59 0%, #2a527a 100%);
         }
         
-        .stButton > button:hover {
+        [data-testid="stButton"] > button:not([kind="secondary"]):hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
             background-image: linear-gradient(145deg, #2a527a 0%, #1e3d59 100%);
         }
         
-        .stButton > button::before {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        /* Custom button styles */
-        [data-testid="nonlicensed"] {
+        /* Card accents */
+        [data-testid="nonlicensed"] > button {
             border-left: 5px solid #4CAF50 !important;
         }
-        
-        [data-testid="licensed"] {
+        [data-testid="licensed"] > button {
             border-left: 5px solid #2196F3 !important;
         }
-        
-        [data-testid="catq"] {
+        [data-testid="catq"] > button {
             border-left: 5px solid #FFC107 !important;
         }
         
         /* Upload button style */
-        [data-testid="upload"] {
+        [data-testid="upload"] > button {
             background-color: #4CAF50 !important;
             height: 60px !important;
             background-image: none !important;
         }
-        
-        [data-testid="upload"]:hover {
+        [data-testid="upload"] > button:hover {
             background-color: #45a049 !important;
         }
         </style>
