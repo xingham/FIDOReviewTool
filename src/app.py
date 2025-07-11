@@ -128,32 +128,33 @@ def show_admin_page():
     else:
         st.error("Access denied. Admins only.")
 
-def show_reviewer_page(queue_type):
+def show_reviewer_page(prefix):  # Add prefix parameter
     show_back_button()
-    st.header(f"{queue_type.title()} Projects Review")
     
     # Filter files for this queue
+    queue_type = prefix.split('_')[0]  # Extract queue type from prefix
     queue_files = {k: v for k, v in st.session_state.uploaded_files.items() if k.startswith(queue_type)}
     
     if not queue_files:
         st.info(f"No files available for review in {queue_type} queue")
         return
     
-    # File selection
+    # File selection with unique key
     selected_file = st.selectbox(
         "Select file to review:",
         options=list(queue_files.keys()),
-        format_func=lambda x: x.split('_')[1]
+        format_func=lambda x: x.split('_')[1],
+        key=f"select_{prefix}"  # Add unique key
     )
     
     if selected_file:
         df = queue_files[selected_file]
         pending_reviews = df[df['status'] == 'Pending Review']
         
-        # Add save all button in sidebar
+        # Add save all button in sidebar with unique key
         with st.sidebar:
             st.markdown("### 🛠️ Controls")
-            if st.button("💾 Save All Reviews"):
+            if st.button("💾 Save All Reviews", key=f"save_all_{prefix}"):
                 st.session_state.uploaded_files[selected_file] = df
                 st.success("✅ All changes saved")
                 st.rerun()
@@ -161,7 +162,7 @@ def show_reviewer_page(queue_type):
         if not pending_reviews.empty:
             st.subheader("Records Pending Review")
             for idx, row in pending_reviews.iterrows():
-                with st.expander(f"FIDO: {row.get('FIDO', f'Record {idx + 1}')}"):
+                with st.expander(f"FIDO: {row.get('FIDO', f'Record {idx + 1')}"):
                     # Display original values
                     st.text(f"UPC: {row.get('BARCODE', 'N/A')}")
                     st.text(f"Brand ID: {row.get('BRAND_ID', 'N/A')}")
@@ -169,34 +170,34 @@ def show_reviewer_page(queue_type):
                     st.text(f"Category: {row.get('CATEGORY', 'N/A')}")
                     st.text(f"Description: {row.get('DESCRIPTION', 'N/A')}")
                     
-                    # Edit fields
+                    # Edit fields with unique keys
                     df.at[idx, 'updated_description'] = st.text_area(
                         "📝 Updated Description", 
                         value=row.get('updated_description', row.get('DESCRIPTION', '')),
-                        key=f"desc_{idx}"
+                        key=f"desc_{prefix}_{idx}"
                     )
                     df.at[idx, 'updated_category'] = st.text_input(
                         "📦 Updated Category",
                         value=row.get('updated_category', row.get('CATEGORY', '')),
-                        key=f"cat_{idx}"
+                        key=f"cat_{prefix}_{idx}"
                     )
                     df.at[idx, 'updated_brand'] = st.text_input(
                         "🏷️ Updated Brand",
                         value=row.get('updated_brand', row.get('BRAND', '')),
-                        key=f"brand_{idx}"
+                        key=f"brand_{prefix}_{idx}"
                     )
                     df.at[idx, 'no_change'] = st.checkbox(
                         "✅ No Change Required",
                         value=row.get('no_change', False),
-                        key=f"nochange_{idx}"
+                        key=f"nochange_{prefix}_{idx}"
                     )
                     df.at[idx, 'comments'] = st.text_input(
                         "🗒️ Comments",
                         value=row.get('comments', ''),
-                        key=f"comment_{idx}"
+                        key=f"comment_{prefix}_{idx}"
                     )
                     
-                    if st.button("Submit Review", key=f"submit_{idx}"):
+                    if st.button("Submit Review", key=f"submit_{prefix}_{idx}"):
                         df.at[idx, 'status'] = 'Reviewed'
                         df.at[idx, 'reviewer'] = st.session_state.current_user['name']
                         df.at[idx, 'review_date'] = datetime.now().strftime("%Y-%m-%d")
@@ -214,7 +215,7 @@ def show_queue_page(queue_type):
     tab1, tab2 = st.tabs(["Review Projects", "Upload New Project"])
     
     with tab1:
-        show_reviewer_page(queue_type)
+        show_reviewer_page(f"{queue_type}_review")  # Add unique prefix
     
     with tab2:
         if st.session_state.current_user['role'] == "Admin":
@@ -222,10 +223,10 @@ def show_queue_page(queue_type):
             uploaded_file = st.file_uploader(
                 "Upload CSV File:", 
                 type="csv",
-                key=f"upload_{queue_type}"  # Unique key for each queue
+                key=f"upload_{queue_type}_queue"  # Make key more unique
             )
             
-            if st.button("Upload Project", key=f"upload_button_{queue_type}"):
+            if st.button("Upload Project", key=f"upload_button_{queue_type}_queue"):  # Make key more unique
                 if uploaded_file is not None:
                     if handle_file_upload(uploaded_file, queue_type):
                         st.success(f"File uploaded successfully to {queue_type} queue")
