@@ -1,7 +1,35 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import time  # Add this import
+import time
+import pickle
+import os
+
+# Add file storage constants
+STORAGE_DIR = "data"
+STORAGE_FILE = os.path.join(STORAGE_DIR, "uploaded_files.pkl")
+
+# Create storage directory if it doesn't exist
+if not os.path.exists(STORAGE_DIR):
+    os.makedirs(STORAGE_DIR)
+
+# Function to save session state
+def save_session_state():
+    """Save uploaded files to disk"""
+    with open(STORAGE_FILE, 'wb') as f:
+        pickle.dump(st.session_state.uploaded_files, f)
+
+# Function to load session state
+def load_session_state():
+    """Load uploaded files from disk"""
+    if os.path.exists(STORAGE_FILE):
+        with open(STORAGE_FILE, 'rb') as f:
+            return pickle.load(f)
+    return {}
+
+# Initialize session state
+if 'uploaded_files' not in st.session_state:
+    st.session_state.uploaded_files = load_session_state()
 
 # Set the title of the app
 st.title("FIDO Review Tool")
@@ -11,8 +39,6 @@ if 'current_user' not in st.session_state:
     st.session_state.current_user = None
 if 'page_history' not in st.session_state:
     st.session_state.page_history = ['login']
-if 'uploaded_files' not in st.session_state:
-    st.session_state.uploaded_files = {}
 if 'selected_project' not in st.session_state:
     st.session_state.selected_project = None
 if 'current_queue' not in st.session_state:
@@ -78,23 +104,22 @@ def handle_file_upload(uploaded_file, queue_type, project_title):
     if uploaded_file is not None:
         try:
             df = pd.read_csv(uploaded_file)
-            # Add metadata columns
             current_time = datetime.now()
+            
+            # Add metadata columns including uploader
             df['upload_date'] = current_time.strftime("%Y-%m-%d")
             df['status'] = 'Pending Review'
+            df['uploader'] = st.session_state.current_user['name']  # Add uploader
             df['reviewer'] = ''
             df['review_date'] = ''
             df['comments'] = ''
             
-            # Create unique file key
             formatted_date = current_time.strftime('%Y%m%d_%H%M%S')
             file_key = f"{queue_type}_{project_title}_{formatted_date}"
             
             # Update session state without clearing existing files
             st.session_state.uploaded_files[file_key] = df
-            
-            # Force session state to persist
-            st.session_state.modified = True
+            save_session_state()  # Save after upload
             return True
             
         except Exception as e:
@@ -224,7 +249,8 @@ def show_reviewer_page(prefix, show_back=True):
                         df.at[idx, 'reviewer'] = st.session_state.current_user['name']
                         df.at[idx, 'review_date'] = datetime.now().strftime("%Y-%m-%d")
                         st.session_state.uploaded_files[selected_file] = df
-                        st.success("✅ Review submitted successfully")
+                        save_session_state()
+                        st.success(f"✅ Review submitted by {st.session_state.current_user['name']}")
                         st.rerun()
                     
                     st.markdown("---")  # Add separator between records
@@ -537,7 +563,6 @@ def show_project_selection_page(queue_type):
             'priority': priority,
             'progress': (reviewed/total_records * 100) if total_records > 0 else 0
         }
-    
     # Create two columns for selection and statistics
     col1, col2 = st.columns([1, 2])
     
@@ -554,10 +579,17 @@ def show_project_selection_page(queue_type):
             st.subheader("Project Statistics")
             stats = project_stats[selected_project]
             
-            # Display statistics in a card with properly formatted priority
+            # Get uploader name from the first file of the project
+            project_files = {k: v for k, v in queue_files.items() 
+                           if k.split('_')[1] == selected_project}
+            first_file = next(iter(project_files.values()))
+            uploader = first_file['uploader'].iloc[0]
+            
+            # Display statistics with uploader info
             st.markdown(f"""
                 <div style='padding: 1rem; background-color: #1e3d59; border-radius: 0.5rem; color: white;'>
                     <h3>{selected_project.rsplit('_', 1)[0]}</h3>
+                    <p>Uploaded by: {uploader}</p>
                     <p>Priority Level: {stats['priority']}</p>
                     <p>Total Records: {stats['total']}</p>
                     <p>Reviewed: {stats['reviewed']}</p>
