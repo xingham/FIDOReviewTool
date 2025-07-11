@@ -52,8 +52,31 @@ def navigate_to(page):
 
 def show_back_button(prefix=""):
     if len(st.session_state.page_history) > 1:
+        st.markdown("""
+            <style>
+            .back-button {
+                background-color: #f0f2f6;
+                border: none;
+                padding: 0.5rem 1rem;
+                border-radius: 0.5rem;
+                color: #1e3d59;
+                font-size: 1rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                margin-bottom: 1rem;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            .back-button:hover {
+                background-color: #e0e2e6;
+                transform: translateX(-5px);
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        
         # Add prefix to make button ID unique
-        if st.button('← Back', key=f"back_button_{prefix}"):
+        if st.button('← Back', key=f"back_button_{prefix}", use_container_width=False):
             previous_page = st.session_state.page_history[-2]
             if previous_page == 'login':
                 st.session_state.current_user = None
