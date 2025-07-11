@@ -56,7 +56,7 @@ def show_login_panel():
 def show_main_page():
     show_back_button()
     st.header("Main Page")
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns([2, 2, 2, 1])  # Added fourth column for admin upload
     
     with col1:
         if st.button("Non-licensed FIDO Review Projects"):
@@ -67,6 +67,11 @@ def show_main_page():
     with col3:
         if st.button("CATQ"):
             navigate_to('catq')
+    # Add Upload button for admins only
+    with col4:
+        if st.session_state.current_user['role'] == "Admin":
+            if st.button("📤 Upload", type="primary"):
+                navigate_to('upload')
 
 def handle_file_upload(uploaded_file, queue_type, project_title):
     if uploaded_file is not None:
@@ -250,30 +255,40 @@ def show_reviewer_page(prefix):
                 st.dataframe(download_df)
 
 def show_queue_page(queue_type):
-    show_back_button(queue_type)  # Pass queue_type as prefix
+    show_back_button(queue_type)
     st.header(f"{queue_type.title()} Projects")
     
     # Add tabs for different views
     tab1, tab2 = st.tabs(["Review Projects", "Upload New Project"])
     
     with tab1:
-        show_reviewer_page(f"{queue_type}_review")  # Add unique prefix
+        show_reviewer_page(f"{queue_type}_review")
     
     with tab2:
         if st.session_state.current_user['role'] == "Admin":
             st.subheader("Upload New Project")
+            # Add project title input
+            project_title = st.text_input(
+                "Project Title:",
+                key=f"title_{queue_type}",
+                placeholder="Enter a descriptive title for this project"
+            )
+            
+            # Add unique key for file uploader based on queue type and timestamp
+            upload_key = f"upload_{queue_type}_{datetime.now().timestamp()}"
             uploaded_file = st.file_uploader(
                 "Upload CSV File:", 
                 type="csv",
-                key=f"upload_{queue_type}_queue"  # Make key more unique
+                key=upload_key
             )
             
-            if st.button("Upload Project", key=f"upload_button_{queue_type}_queue"):  # Make key more unique
-                if uploaded_file is not None:
-                    if handle_file_upload(uploaded_file, queue_type):
+            if st.button("Upload Project", key=f"upload_button_{queue_type}_{datetime.now().timestamp()}"):
+                if uploaded_file is not None and project_title:
+                    if handle_file_upload(uploaded_file, queue_type, project_title):
                         st.success(f"File uploaded successfully to {queue_type} queue")
+                        st.rerun()
                 else:
-                    st.error("Please select a file to upload")
+                    st.error("Please provide both a project title and select a file")
         else:
             st.warning("Only administrators can upload new projects")
 
@@ -375,6 +390,55 @@ def show_upload_section(queue_type):
                 st.rerun()
         else:
             st.error("Please provide both a project title and select a file")
+
+def show_upload_page():
+    """Dedicated upload page for admins"""
+    if st.session_state.current_user['role'] != "Admin":
+        st.error("Access denied. Admins only.")
+        return
+    
+    show_back_button('upload')
+    st.header("📤 Upload New Project")
+    
+    # File upload section
+    uploaded_file = st.file_uploader(
+        "Upload CSV File:", 
+        type="csv",
+        key="admin_upload"
+    )
+    
+    if uploaded_file:
+        st.success("File loaded successfully!")
+        
+        # Project details section
+        with st.form("project_details"):
+            st.subheader("Project Details")
+            
+            # Project title input
+            project_title = st.text_input(
+                "Project Title:",
+                placeholder="Enter a descriptive title for this project"
+            )
+            
+            # Queue selection
+            queue_type = st.radio(
+                "Select Project Type:",
+                ["Non-licensed", "Licensed"],
+                horizontal=True
+            )
+            
+            # Submit button
+            submit = st.form_submit_button("Upload Project")
+            
+            if submit:
+                if project_title:
+                    if handle_file_upload(uploaded_file, queue_type.lower(), project_title):
+                        st.success(f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue")
+                        # Clear form
+                        st.session_state.admin_upload = None
+                        st.rerun()
+                else:
+                    st.error("Please provide a project title")
 
 # Main page routing logic
 current_page = get_current_page()
