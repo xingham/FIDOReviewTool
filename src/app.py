@@ -390,74 +390,126 @@ def show_upload_page():
     show_back_button('upload')
     st.header("📤 Upload New Project")
     
-    # Custom CSS for upload form
-    st.markdown("""
-        <style>
-        .upload-container {
-            background-color: #1e3d59;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            color: white;
-            margin-bottom: 1rem;
-        }
-        .upload-title, .project-type {
-            color: white;
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-        .upload-section {
-            margin: 1rem 0;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    # Create tabs for upload and overview
+    upload_tab, overview_tab = st.tabs(["Upload New Project", "Project Overview"])
     
-    # Project details section with dark blue background
-    st.markdown("""
-        <div class="upload-container">
-            <div class="upload-title">Project Details</div>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        uploaded_file = st.file_uploader(
-            "Upload CSV File:", 
-            type="csv",
-            key="admin_upload"
-        )
-    
-    with col2:
-        st.markdown('<div class="project-type">Project Type</div>', 
-                   unsafe_allow_html=True)
-        queue_type = st.radio(
-            "Select queue:",
-            ["Non-licensed", "Licensed"],
-            horizontal=False,
-            label_visibility="collapsed"
-        )
-    
-    if uploaded_file:
-        # Get file name without extension
-        project_title = uploaded_file.name.rsplit('.', 1)[0]
-        st.success("✅ File loaded successfully!")
-        st.info(f"Project Title: {project_title}")
-        
-        if st.button("Upload Project", type="primary"):
-            # Map radio button selection to queue type
-            queue_mapping = {
-                "Non-licensed": "nonlicensed",
-                "Licensed": "licensed"
+    with upload_tab:
+        # Custom CSS for upload form
+        st.markdown("""
+            <style>
+            .upload-container {
+                background-color: #1e3d59;
+                padding: 2rem;
+                border-radius: 0.5rem;
+                color: white;
+                margin-bottom: 1rem;
             }
+            .upload-title, .project-type {
+                color: white;
+                font-size: 1.2rem;
+                font-weight: bold;
+                margin-bottom: 1rem;
+            }
+            .upload-section {
+                margin: 1rem 0;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        # Project details section with dark blue background
+        st.markdown("""
+            <div class="upload-container">
+                <div class="upload-title">Project Details</div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            uploaded_file = st.file_uploader(
+                "Upload CSV File:", 
+                type="csv",
+                key="admin_upload"
+            )
+        
+        with col2:
+            st.markdown('<div class="project-type">Project Type</div>', 
+                       unsafe_allow_html=True)
+            queue_type = st.radio(
+                "Select queue:",
+                ["Non-licensed", "Licensed"],
+                horizontal=False,
+                label_visibility="collapsed"
+            )
+        
+        if uploaded_file:
+            # Get file name without extension
+            project_title = uploaded_file.name.rsplit('.', 1)[0]
+            st.success("✅ File loaded successfully!")
+            st.info(f"Project Title: {project_title}")
             
-            mapped_queue = queue_mapping[queue_type]
+            if st.button("Upload Project", type="primary"):
+                # Map radio button selection to queue type
+                queue_mapping = {
+                    "Non-licensed": "nonlicensed",
+                    "Licensed": "licensed"
+                }
+                
+                mapped_queue = queue_mapping[queue_type]
+                
+                if handle_file_upload(uploaded_file, mapped_queue, project_title):
+                    success_message = f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue"
+                    st.success(success_message)
+                    time.sleep(2)
+                    st.rerun()
+
+    with overview_tab:
+        st.subheader("Current Projects")
+        
+        # Group projects by queue type
+        for queue_type in ["nonlicensed", "licensed"]:
+            queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
+                         if k.startswith(queue_type)}
             
-            if handle_file_upload(uploaded_file, mapped_queue, project_title):
-                success_message = f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue"
-                st.success(success_message)
-                time.sleep(2)
-                st.rerun()
+            if queue_files:
+                st.markdown(f"### {queue_type.title()} Projects")
+                
+                for file_key, df in queue_files.items():
+                    parts = file_key.split('_')
+                    project_name = parts[1]
+                    date_str = parts[-1][:8]
+                    formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                    
+                    total_records = len(df)
+                    reviewed = len(df[df['status'] == 'Reviewed'])
+                    
+                    # Create expandable section for each project
+                    with st.expander(f"📁 {project_name}"):
+                        col1, col2 = st.columns([3, 1])
+                        
+                        with col1:
+                            st.text(f"Upload Date: {formatted_date}")
+                            st.text(f"Progress: {reviewed}/{total_records} records reviewed")
+                            st.progress(reviewed/total_records if total_records > 0 else 0)
+                        
+                        with col2:
+                            # Add remove button
+                            if st.button("🗑️ Remove", key=f"remove_{file_key}"):
+                                del st.session_state.uploaded_files[file_key]
+                                st.success(f"Removed {project_name}")
+                                st.rerun()
+                            
+                            # Add download button
+                            csv = df.to_csv(index=False).encode('utf-8')
+                            st.download_button(
+                                label="⬇️ Download",
+                                data=csv,
+                                file_name=f"{project_name}_{formatted_date}.csv",
+                                mime="text/csv",
+                                key=f"download_{file_key}"
+                            )
+            else:
+                st.info(f"No {queue_type.title()} projects uploaded yet")
 
 # Main page routing logic
 current_page = get_current_page()
