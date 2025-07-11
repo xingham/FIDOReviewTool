@@ -146,10 +146,7 @@ def show_admin_page():
         st.error("Access denied. Admins only.")
 
 def show_reviewer_page(prefix, show_back=True):
-    """Show the reviewer interface with optional back button"""
-    if show_back:
-        show_back_button(prefix)
-    
+    """Show the reviewer interface"""
     queue_type = prefix.split('_')[0]
     queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
                   if k.startswith(queue_type)}
@@ -268,9 +265,11 @@ def show_queue_page(queue_type):
         show_project_selection_page(queue_type)
         return
     
+    # Add back button here
+    show_back_button(queue_type)
     st.header(f"Reviewing: {st.session_state.selected_project}")
     
-    # Show reviewer page without additional back button
+    # Show reviewer page without its own back button
     show_reviewer_page(f"{queue_type}_review", show_back=False)
 
 def show_queue_landing_page(queue_type):
