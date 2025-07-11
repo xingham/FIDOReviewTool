@@ -118,10 +118,10 @@ def show_main_page():
         /* Main menu card buttons */
         .stButton > button:not([data-testid="back_button"]) {
             background-color: #1e3d59 !important;
-            border-radius: 15px !important;
-            padding: 2rem 1.5rem !important;
+            border-radius: 12px !important;
+            padding: 1.5rem !important;
             margin: 0.5rem 0 !important;
-            height: 220px !important;
+            height: 180px !important;  /* Reduced height */
             width: 100% !important;
             border: none !important;
             color: white !important;
@@ -129,10 +129,9 @@ def show_main_page():
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
-            justify-content: center !important;
-            gap: 1.5rem !important;
-            font-size: 1.4rem !important;
-            line-height: 1.5 !important;
+            justify-content: space-between !important;  /* Changed to space-between */
+            font-size: 1.2rem !important;  /* Reduced font size */
+            line-height: 1.3 !important;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
             background-image: linear-gradient(145deg, #1e3d59 0%, #2a527a 100%) !important;
             white-space: pre-line !important;
@@ -148,14 +147,14 @@ def show_main_page():
 
         /* Emoji styling */
         .stButton > button:not([data-testid="back_button"]) > div:first-child {
-            font-size: 3rem !important;
-            margin-bottom: 1rem !important;
+            font-size: 2.5rem !important;  /* Reduced emoji size */
+            margin-bottom: 0.5rem !important;
         }
         
         /* Upload button style */
         [data-testid="upload"] button {
             background-color: #4CAF50 !important;
-            height: 60px !important;
+            height: 50px !important;  /* Reduced upload button height */
             background-image: none !important;
         }
         </style>
