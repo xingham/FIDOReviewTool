@@ -117,20 +117,24 @@ def show_main_page():
             margin-bottom: 15px;
             color: white;
         }
+        .stButton {
+            height: 100%;
+            width: 100%;
+        }
         .stButton > button {
             width: 100%;
-            height: 180px;
-            background-color: transparent;
-            border: none;
-            padding: 0;
-            margin: 0;
+            height: 100%;
+            background-color: #1e3d59 !important;
+            border: none !important;
+            color: white !important;
+            padding: 20px !important;
+            border-radius: 10px !important;
+            transition: all 0.3s ease !important;
         }
         .stButton > button:hover {
-            background-color: transparent;
-            border: none;
-        }
-        .stButton > button > div {
-            background-color: transparent;
+            transform: translateY(-5px) !important;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important;
+            background-color: #2a527a !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -139,30 +143,15 @@ def show_main_page():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("""
-            <div class='main-card'>
-                <div class='card-icon'>📋</div>
-                <div class='card-title'>Non-Licensed<br>FIDO Review</div>
-            </div>
-        """, key="nonlicensed", use_container_width=True, unsafe_allow_html=True):
+        if st.button("📋\nNon-Licensed\nFIDO Review", key="nonlicensed", use_container_width=True):
             navigate_to('nonlicensed')
     
     with col2:
-        if st.button("""
-            <div class='main-card'>
-                <div class='card-icon'>📜</div>
-                <div class='card-title'>Licensed<br>FIDO Review</div>
-            </div>
-        """, key="licensed", use_container_width=True, unsafe_allow_html=True):
+        if st.button("📜\nLicensed\nFIDO Review", key="licensed", use_container_width=True):
             navigate_to('licensed')
     
     with col3:
-        if st.button("""
-            <div class='main-card'>
-                <div class='card-icon'>🔍</div>
-                <div class='card-title'>CATQ</div>
-            </div>
-        """, key="catq", use_container_width=True, unsafe_allow_html=True):
+        if st.button("🔍\nCATQ", key="catq", use_container_width=True):
             navigate_to('catq')
     
     # Admin upload button
