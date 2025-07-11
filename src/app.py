@@ -116,51 +116,55 @@ def show_main_page():
     st.markdown("""
         <style>
         /* Main menu card buttons */
-        [data-testid="stButton"] > button:not([kind="secondary"]) {
-            background-color: #1e3d59;
-            border-radius: 15px;
-            padding: 2rem 1.5rem;
-            margin: 0.5rem 0;
-            height: 200px;
-            width: 100%;
-            border: none;
-            color: white;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            font-size: 1.2rem;
-            line-height: 1.5;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            background-image: linear-gradient(145deg, #1e3d59 0%, #2a527a 100%);
+        [data-testid="nonlicensed"] button,
+        [data-testid="licensed"] button,
+        [data-testid="catq"] button {
+            background-color: #1e3d59 !important;
+            border-radius: 15px !important;
+            padding: 2rem 1.5rem !important;
+            margin: 0.5rem 0 !important;
+            height: 200px !important;
+            width: 100% !important;
+            border: none !important;
+            color: white !important;
+            transition: all 0.3s ease !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 1rem !important;
+            font-size: 1.2rem !important;
+            line-height: 1.5 !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+            background-image: linear-gradient(145deg, #1e3d59 0%, #2a527a 100%) !important;
         }
         
-        [data-testid="stButton"] > button:not([kind="secondary"]):hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-            background-image: linear-gradient(145deg, #2a527a 0%, #1e3d59 100%);
+        [data-testid="nonlicensed"] button:hover,
+        [data-testid="licensed"] button:hover,
+        [data-testid="catq"] button:hover {
+            transform: translateY(-5px) !important;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
+            background-image: linear-gradient(145deg, #2a527a 0%, #1e3d59 100%) !important;
         }
         
         /* Card accents */
-        [data-testid="nonlicensed"] > button {
+        [data-testid="nonlicensed"] button {
             border-left: 5px solid #4CAF50 !important;
         }
-        [data-testid="licensed"] > button {
+        [data-testid="licensed"] button {
             border-left: 5px solid #2196F3 !important;
         }
-        [data-testid="catq"] > button {
+        [data-testid="catq"] button {
             border-left: 5px solid #FFC107 !important;
         }
         
         /* Upload button style */
-        [data-testid="upload"] > button {
+        [data-testid="upload"] button {
             background-color: #4CAF50 !important;
             height: 60px !important;
             background-image: none !important;
         }
-        [data-testid="upload"] > button:hover {
+        [data-testid="upload"] button:hover {
             background-color: #45a049 !important;
         }
         </style>
