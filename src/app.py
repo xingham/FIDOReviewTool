@@ -100,7 +100,6 @@ def show_main_page():
             justify-content: center;
             align-items: center;
             text-align: center;
-            position: relative;
         }
         .main-card:hover {
             transform: translateY(-5px);
@@ -112,22 +111,26 @@ def show_main_page():
             font-size: 1.5rem;
             font-weight: bold;
             margin-bottom: 10px;
-            z-index: 1;
         }
         .card-icon {
             font-size: 3rem;
             margin-bottom: 15px;
             color: white;
-            z-index: 1;
         }
-        .card-button {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .stButton > button {
             width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
+            height: 180px;
+            background-color: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+        .stButton > button:hover {
+            background-color: transparent;
+            border: none;
+        }
+        .stButton > button > div {
+            background-color: transparent;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -136,47 +139,35 @@ def show_main_page():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        container = st.container()
-        button = st.button(" ", key="nonlicensed")
-        if button:
-            navigate_to('nonlicensed')
-        container.markdown("""
+        if st.button("""
             <div class='main-card'>
-                <button class='card-button'></button>
                 <div class='card-icon'>📋</div>
                 <div class='card-title'>Non-Licensed<br>FIDO Review</div>
             </div>
-        """, unsafe_allow_html=True)
+        """, key="nonlicensed", use_container_width=True, unsafe_allow_html=True):
+            navigate_to('nonlicensed')
     
     with col2:
-        container = st.container()
-        button = st.button(" ", key="licensed")
-        if button:
-            navigate_to('licensed')
-        container.markdown("""
+        if st.button("""
             <div class='main-card'>
-                <button class='card-button'></button>
                 <div class='card-icon'>📜</div>
                 <div class='card-title'>Licensed<br>FIDO Review</div>
             </div>
-        """, unsafe_allow_html=True)
+        """, key="licensed", use_container_width=True, unsafe_allow_html=True):
+            navigate_to('licensed')
     
     with col3:
-        container = st.container()
-        button = st.button(" ", key="catq")
-        if button:
-            navigate_to('catq')
-        container.markdown("""
+        if st.button("""
             <div class='main-card'>
-                <button class='card-button'></button>
                 <div class='card-icon'>🔍</div>
                 <div class='card-title'>CATQ</div>
             </div>
-        """, unsafe_allow_html=True)
+        """, key="catq", use_container_width=True, unsafe_allow_html=True):
+            navigate_to('catq')
     
     # Admin upload button
     if st.session_state.current_user['role'] == "Admin":
-        st.markdown("""<br>""", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
             if st.button("📤 Upload New Project", type="primary", key="upload"):
