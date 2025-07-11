@@ -33,7 +33,7 @@ def show_login_panel():
     if login_button and name and role:
         st.session_state.current_user = {"name": name, "role": role}
         st.success(f"Welcome, {name} ({role})")
-        st.session_state.page_history.append('main')
+        navigate_to('main')  # Use navigate_to instead of directly appending
     elif login_button:
         st.error("Please enter your name and select a role.")
 
