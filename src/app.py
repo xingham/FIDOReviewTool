@@ -83,22 +83,95 @@ def show_login_panel():
 def show_main_page():
     show_back_button()
     st.header("Main Page")
-    col1, col2, col3, col4 = st.columns([2, 2, 2, 1])  # Added fourth column for admin upload
+    
+    # Add custom CSS for modern cards
+    st.markdown("""
+        <style>
+        .main-card {
+            background-color: #1e3d59;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .main-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .card-title {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: white;
+        }
+        .upload-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-align: center;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Create layout with modern cards
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("Non-Licensed FIDO Review Projects"):  # Fixed capitalization
+        st.markdown("""
+            <div class='main-card' onclick='document.querySelector("[data-testid=\'nonlicensed-button\']").click()'>
+                <div class='card-icon'>📋</div>
+                <div class='card-title'>Non-Licensed FIDO Review</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Non-Licensed FIDO Review Projects", key="nonlicensed-button", visible=False):
             navigate_to('nonlicensed')
+    
     with col2:
-        if st.button("Licensed FIDO Review Projects"):
+        st.markdown("""
+            <div class='main-card' onclick='document.querySelector("[data-testid=\'licensed-button\']").click()'>
+                <div class='card-icon'>📜</div>
+                <div class='card-title'>Licensed FIDO Review</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Licensed FIDO Review Projects", key="licensed-button", visible=False):
             navigate_to('licensed')
+    
     with col3:
-        if st.button("CATQ"):
+        st.markdown("""
+            <div class='main-card' onclick='document.querySelector("[data-testid=\'catq-button\']").click()'>
+                <div class='card-icon'>🔍</div>
+                <div class='card-title'>CATQ</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("CATQ", key="catq-button", visible=False):
             navigate_to('catq')
-    # Add Upload button for admins only
-    with col4:
-        if st.session_state.current_user['role'] == "Admin":
-            if st.button("📤 Upload", type="primary"):
-                navigate_to('upload')
+    
+    # Add Upload button for admins in a centered container
+    if st.session_state.current_user['role'] == "Admin":
+        st.markdown("""
+            <div style='display: flex; justify-content: center; margin-top: 20px;'>
+                <div class='upload-button' onclick='document.querySelector("[data-testid=\'upload-button\']").click()'>
+                    📤 Upload New Project
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Upload", key="upload-button", visible=False):
+            navigate_to('upload')
 
 def handle_file_upload(uploaded_file, queue_type, project_title):
     if uploaded_file is not None:
