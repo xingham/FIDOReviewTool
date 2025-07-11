@@ -299,19 +299,26 @@ def show_queue_landing_page(queue_type):
         <style>
         .project-card {
             padding: 1rem;
-            background-color: #f0f2f6;
             border-radius: 0.5rem;
             margin-bottom: 1rem;
+            background-color: #1e3d59;  /* Dark blue background */
+            color: white;
+            border: none;
         }
         .project-title {
             font-size: 1.2rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
+            color: #ffffff;  /* White text */
+        }
+        .project-info {
+            color: #e6e6e6;  /* Light gray text for better readability */
+            margin: 0.5rem 0;
         }
         </style>
     """, unsafe_allow_html=True)
     
-    # Display projects in a grid
+    # Update the card HTML structure
     cols = st.columns(2)
     for idx, (file_key, df) in enumerate(queue_files.items()):
         # Split the file key correctly
@@ -327,8 +334,8 @@ def show_queue_landing_page(queue_type):
             st.markdown(f"""
                 <div class="project-card">
                     <div class="project-title">{filename}</div>
-                    <p>Upload Date: {upload_date[:8]}</p>
-                    <p>Progress: {reviewed}/{total_records} records reviewed</p>
+                    <div class="project-info">Upload Date: {upload_date[:8]}</div>
+                    <div class="project-info">Progress: {reviewed}/{total_records} records reviewed</div>
                 </div>
             """, unsafe_allow_html=True)
             
