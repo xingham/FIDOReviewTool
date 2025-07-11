@@ -86,7 +86,7 @@ def show_main_page():
     col1, col2, col3, col4 = st.columns([2, 2, 2, 1])  # Added fourth column for admin upload
     
     with col1:
-        if st.button("Non-licensed FIDO Review Projects"):
+        if st.button("Non-Licensed FIDO Review Projects"):  # Fixed capitalization
             navigate_to('nonlicensed')
     with col2:
         if st.button("Licensed FIDO Review Projects"):
