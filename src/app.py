@@ -14,14 +14,17 @@ if 'current_page' not in st.session_state:
 def navigate_to(page):
     st.session_state.previous_page = st.session_state.current_page
     st.session_state.current_page = page
+    st.experimental_rerun()
 
 def show_back_button():
     if st.session_state.previous_page:
-        if st.button('← Back'):
-            # Swap current and previous page
-            temp = st.session_state.current_page
-            st.session_state.current_page = st.session_state.previous_page
-            st.session_state.previous_page = temp
+        col1, col2 = st.columns([1, 9])
+        with col1:
+            if st.button('← Back'):
+                temp = st.session_state.current_page
+                st.session_state.current_page = st.session_state.previous_page
+                st.session_state.previous_page = temp
+                st.experimental_rerun()
 
 # Function to display the login panel
 def show_login_panel():
@@ -34,23 +37,25 @@ def show_login_panel():
             st.session_state.current_user = {"name": name, "role": role}
             st.success(f"Welcome, {name} ({role})")
             navigate_to('main')
-            show_main_page()
         else:
             st.error("Please enter your name and select a role.")
 
 # Function to display the main page
 def show_main_page():
-    st.header("Main Page")
     show_back_button()
-    st.button("Non-licensed FIDO Review Projects")
-    st.button("Licensed FIDO Review Projects")
-    st.button("CATQ")
+    st.header("Main Page")
+    if st.button("Non-licensed FIDO Review Projects"):
+        navigate_to('nonlicensed')
+    if st.button("Licensed FIDO Review Projects"):
+        navigate_to('licensed')
+    if st.button("CATQ"):
+        navigate_to('catq')
 
 # Function to display the admin page
 def show_admin_page():
     if st.session_state.current_user and st.session_state.current_user['role'] == "Admin":
-        st.header("Admin Page")
         show_back_button()
+        st.header("Admin Page")
         st.selectbox("Select Queue:", ["Non-licensed", "Licensed", "CATQ"])
         uploaded_file = st.file_uploader("Upload CSV File:", type="csv")
         if st.button("Upload Project"):
@@ -61,11 +66,14 @@ def show_admin_page():
     else:
         st.error("Access denied. Admins only.")
 
-# Function to toggle between pages based on user authentication and current page
+# Main page routing logic
 if st.session_state.current_user:
     if st.session_state.current_page == 'admin':
         show_admin_page()
-    else:
+    elif st.session_state.current_page == 'main':
         show_main_page()
+    elif st.session_state.current_page in ['nonlicensed', 'licensed', 'catq']:
+        show_back_button()
+        st.header(f"{st.session_state.current_page.title()} Projects")
 else:
     show_login_panel()
