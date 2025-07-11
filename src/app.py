@@ -13,6 +13,8 @@ if 'page_history' not in st.session_state:
 # Add new session state for uploaded files
 if 'uploaded_files' not in st.session_state:
     st.session_state.uploaded_files = {}
+if 'selected_project' not in st.session_state:
+    st.session_state.selected_project = None
 
 def navigate_to(page):
     if page not in st.session_state.page_history:
@@ -269,6 +271,63 @@ def show_queue_page(queue_type):
         else:
             st.warning("Only administrators can upload new projects")
 
+def show_queue_landing_page(queue_type):
+    show_back_button(queue_type)
+    st.header(f"{queue_type.title()} Projects")
+    
+    # Filter files for this queue type
+    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() if k.startswith(queue_type)}
+    
+    if not queue_files:
+        st.info(f"No projects available in {queue_type} queue")
+        if st.session_state.current_user['role'] == "Admin":
+            st.warning("Upload a project to get started")
+            show_upload_section(queue_type)
+        return
+
+    # Create project cards
+    st.subheader("📋 Available Projects")
+    
+    for file_key, df in queue_files.items():
+        _, filename, upload_date = file_key.split('_')
+        total_records = len(df)
+        pending = len(df[df['status'] == 'Pending Review'])
+        reviewed = len(df[df['status'] == 'Reviewed'])
+        
+        # Create a card-like container for each project
+        with st.container():
+            st.markdown(f"""
+            <div style='padding: 1rem; border-radius: 0.5rem; background-color: #f0f2f6; margin-bottom: 1rem;'>
+                <h3>{filename}</h3>
+                <p>Upload Date: {upload_date[:4]}/{upload_date[4:6]}/{upload_date[6:8]}</p>
+                <p>Progress: {reviewed}/{total_records} records reviewed</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.progress(reviewed/total_records if total_records > 0 else 0)
+            with col2:
+                if st.button("Review Project", key=f"review_{file_key}"):
+                    st.session_state.selected_project = file_key
+                    navigate_to(f"{queue_type}_review")
+
+def show_upload_section(queue_type):
+    st.subheader("📤 Upload New Project")
+    uploaded_file = st.file_uploader(
+        "Upload CSV File:", 
+        type="csv",
+        key=f"upload_{queue_type}_queue"
+    )
+    
+    if st.button("Upload Project", key=f"upload_button_{queue_type}_queue"):
+        if uploaded_file is not None:
+            if handle_file_upload(uploaded_file, queue_type):
+                st.success(f"File uploaded successfully to {queue_type} queue")
+                st.rerun()
+        else:
+            st.error("Please select a file to upload")
+
 # Main page routing logic
 current_page = get_current_page()
 
@@ -278,6 +337,9 @@ if st.session_state.current_user:
     elif current_page == 'main':
         show_main_page()
     elif current_page in ['nonlicensed', 'licensed', 'catq']:
-        show_queue_page(current_page)
+        if current_page + '_review' in st.session_state.page_history:
+            show_queue_page(current_page)
+        else:
+            show_queue_landing_page(current_page)
 else:
     show_login_panel()
