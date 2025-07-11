@@ -54,8 +54,8 @@ def show_back_button(prefix=""):
     if len(st.session_state.page_history) > 1:
         st.markdown("""
             <style>
-            /* Style specifically for back button */
-            div[data-testid="stButton"] button[kind="secondary"] {
+            /* Back button specific style */
+            [data-testid="back_button"] button {
                 background-color: #f0f2f6 !important;
                 border: none !important;
                 padding: 0.5rem 1rem !important;
@@ -73,15 +73,14 @@ def show_back_button(prefix=""):
                 background-image: none !important;
                 box-shadow: none !important;
             }
-            div[data-testid="stButton"] button[kind="secondary"]:hover {
+            [data-testid="back_button"] button:hover {
                 background-color: #e0e2e6 !important;
                 transform: translateX(-5px) !important;
             }
             </style>
         """, unsafe_allow_html=True)
         
-        # Create back button with secondary style
-        if st.button('← Back', key=f"back_button_{prefix}", type="secondary"):
+        if st.button('← Back', key=f"back_button_{prefix}"):
             previous_page = st.session_state.page_history[-2]
             if previous_page == 'login':
                 st.session_state.current_user = None
@@ -116,12 +115,14 @@ def show_main_page():
     st.markdown("""
         <style>
         /* Main menu card buttons */
-        .stButton > button:not([data-testid="back_button"]) {
+        [data-testid="nonlicensed"] button,
+        [data-testid="licensed"] button,
+        [data-testid="catq"] button {
             background-color: #1e3d59 !important;
             border-radius: 12px !important;
             padding: 1.5rem !important;
             margin: 0.5rem 0 !important;
-            height: 180px !important;  /* Reduced height */
+            height: 180px !important;
             width: 100% !important;
             border: none !important;
             color: white !important;
@@ -129,8 +130,9 @@ def show_main_page():
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
-            justify-content: space-between !important;  /* Changed to space-between */
-            font-size: 1.2rem !important;  /* Reduced font size */
+            justify-content: center !important;
+            gap: 1rem !important;
+            font-size: 1.2rem !important;
             line-height: 1.3 !important;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
             background-image: linear-gradient(145deg, #1e3d59 0%, #2a527a 100%) !important;
@@ -139,22 +141,18 @@ def show_main_page():
         }
         
         /* Card hover effects */
-        .stButton > button:not([data-testid="back_button"]):hover {
+        [data-testid="nonlicensed"] button:hover,
+        [data-testid="licensed"] button:hover,
+        [data-testid="catq"] button:hover {
             transform: translateY(-5px) !important;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
             background-image: linear-gradient(145deg, #2a527a 0%, #1e3d59 100%) !important;
         }
 
-        /* Emoji styling */
-        .stButton > button:not([data-testid="back_button"]) > div:first-child {
-            font-size: 2.5rem !important;  /* Reduced emoji size */
-            margin-bottom: 0.5rem !important;
-        }
-        
         /* Upload button style */
         [data-testid="upload"] button {
             background-color: #4CAF50 !important;
-            height: 50px !important;  /* Reduced upload button height */
+            height: 50px !important;
             background-image: none !important;
         }
         </style>
