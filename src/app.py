@@ -85,14 +85,18 @@ def handle_file_upload(uploaded_file, queue_type, project_title):
             df['reviewer'] = ''
             df['review_date'] = ''
             df['comments'] = ''
-            df['project_title'] = project_title
             
-            # Store in session state with unique key and formatted date
+            # Create unique file key
             formatted_date = current_time.strftime('%Y%m%d_%H%M%S')
-            # Use project title in the key instead of filename
             file_key = f"{queue_type}_{project_title}_{formatted_date}"
+            
+            # Update session state without clearing existing files
             st.session_state.uploaded_files[file_key] = df
+            
+            # Force session state to persist
+            st.session_state.modified = True
             return True
+            
         except Exception as e:
             st.error(f"Error uploading file: {str(e)}")
             return False
@@ -267,68 +271,42 @@ def show_queue_landing_page(queue_type):
     show_back_button(f"landing_{queue_type}")
     st.header(f"{queue_type.title()} Projects")
     
+    # Filter files for this queue type
+    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
+                  if k.startswith(queue_type)}
+    
     if queue_type == "nonlicensed":
-        # Get unique project names from uploaded files
-        project_files = [k.split('_')[1] for k in st.session_state.uploaded_files.keys() 
-                        if k.startswith(queue_type)]
+        # Get unique project names
+        project_files = [k.split('_')[1] for k in queue_files.keys()]
         unique_projects = sorted(set(project_files)) if project_files else ["No projects available"]
         
-        # Replace radio buttons with dropdown
+        # Project selection dropdown
         project_category = st.selectbox(
             "Select Project:",
             options=unique_projects,
-            key="project_category_select"
+            key=f"project_select_{queue_type}"
         )
         
-        # Filter files by both queue type and project name
-        queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
-                      if k.startswith(queue_type) and k.split('_')[1] == project_category}
-        
-        st.subheader(f"📋 {project_category}")
+        if project_category != "No projects available":
+            # Filter files for selected project
+            displayed_files = {k: v for k, v in queue_files.items() 
+                            if k.split('_')[1] == project_category}
+            st.subheader(f"📋 {project_category} Files")
+        else:
+            displayed_files = {}
     else:
-        # For other queue types, show all files
-        queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
-                      if k.startswith(queue_type)}
+        displayed_files = queue_files
         st.subheader("📋 Available Projects")
     
-    if not queue_files or "No projects available" in queue_files:
-        st.info(f"No projects available in selected category")
+    if not displayed_files:
+        st.info(f"No files available in selected category")
         return
 
-    # Create project cards
-    st.subheader("📋 Available Projects")
-    
-    # Custom CSS for cards
-    st.markdown("""
-        <style>
-        .project-card {
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            background-color: #1e3d59;  /* Dark blue background */
-            color: white;
-            border: none;
-        }
-        .project-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: #ffffff;  /* White text */
-        }
-        .project-info {
-            color: #e6e6e6;  /* Light gray text for better readability */
-            margin: 0.5rem 0;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    # Update the card HTML structure
+    # Display project cards
     cols = st.columns(2)
-    for idx, (file_key, df) in enumerate(queue_files.items()):
-        # Split the file key correctly
+    for idx, (file_key, df) in enumerate(displayed_files.items()):
         parts = file_key.split('_')
-        queue = parts[0]
-        project_title = parts[2] if queue_type == "nonlicensed" else parts[1]  # Adjust for category in non-licensed
+        project_name = parts[1]
         date_str = parts[-1][:8]
         formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
         
@@ -338,7 +316,7 @@ def show_queue_landing_page(queue_type):
         with cols[idx % 2]:
             st.markdown(f"""
                 <div class="project-card">
-                    <div class="project-title">{project_title}</div>
+                    <div class="project-title">{project_name}</div>
                     <div class="project-info">Upload Date: {formatted_date}</div>
                     <div class="project-info">Progress: {reviewed}/{total_records} records reviewed</div>
                 </div>
