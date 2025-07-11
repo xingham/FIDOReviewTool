@@ -400,14 +400,12 @@ def show_upload_page():
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        # Project title input
         project_title = st.text_input(
             "Project Title:",
             placeholder="Enter a descriptive title for this project",
             key="upload_project_title"
         )
         
-        # File upload section
         uploaded_file = st.file_uploader(
             "Upload CSV File:", 
             type="csv",
@@ -415,7 +413,6 @@ def show_upload_page():
         )
     
     with col2:
-        # Queue selection
         st.markdown('<div style="color: #1e3d59; font-weight: bold;">Project Type</div>', 
                    unsafe_allow_html=True)
         queue_type = st.radio(
@@ -424,13 +421,21 @@ def show_upload_page():
             horizontal=False,
             label_visibility="collapsed"
         )
+        
+        # Map radio button selection to queue type
+        queue_mapping = {
+            "Non-licensed": "nonlicensed",
+            "Licensed": "licensed"
+        }
     
     if uploaded_file:
         st.success("✅ File loaded successfully!")
         
         if st.button("Upload Project", type="primary"):
             if project_title:
-                if handle_file_upload(uploaded_file, queue_type.lower(), project_title):
+                # Use mapped queue type for file storage
+                mapped_queue = queue_mapping[queue_type]
+                if handle_file_upload(uploaded_file, mapped_queue, project_title):
                     st.success(f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue")
                     time.sleep(2)
                     st.rerun()
