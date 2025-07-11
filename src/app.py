@@ -12,13 +12,13 @@ if 'page_history' not in st.session_state:
 def navigate_to(page):
     if page not in st.session_state.page_history:
         st.session_state.page_history.append(page)
-    st.experimental_rerun()
+    st.rerun()  # Updated from experimental_rerun()
 
 def show_back_button():
     if len(st.session_state.page_history) > 1:
         if st.button('← Back'):
             st.session_state.page_history.pop()  # Remove current page
-            st.experimental_rerun()
+            st.rerun()  # Updated from experimental_rerun()
 
 def get_current_page():
     return st.session_state.page_history[-1] if st.session_state.page_history else 'login'
@@ -29,13 +29,13 @@ def show_login_panel():
     name = st.text_input("Name:")
     role = st.radio("Select your role:", ["Reviewer", "Admin"])
     
-    if st.button("Login"):
-        if name and role:
-            st.session_state.current_user = {"name": name, "role": role}
-            st.success(f"Welcome, {name} ({role})")
-            navigate_to('main')
-        else:
-            st.error("Please enter your name and select a role.")
+    login_button = st.button("Login")
+    if login_button and name and role:
+        st.session_state.current_user = {"name": name, "role": role}
+        st.success(f"Welcome, {name} ({role})")
+        st.session_state.page_history.append('main')
+    elif login_button:
+        st.error("Please enter your name and select a role.")
 
 # Function to display the main page
 def show_main_page():
