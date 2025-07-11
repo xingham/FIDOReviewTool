@@ -125,7 +125,7 @@ def show_main_page():
     
     with col1:
         container = st.container()
-        button = st.button("##", key="nonlicensed", label_visibility="collapsed")
+        button = st.button(" ", key="nonlicensed")  # Changed from "##" to space
         container.markdown("""
             <div class='main-card'>
                 <div class='card-icon'>📋</div>
@@ -137,7 +137,7 @@ def show_main_page():
     
     with col2:
         container = st.container()
-        button = st.button("##", key="licensed", label_visibility="collapsed")
+        button = st.button(" ", key="licensed")  # Changed from "##" to space
         container.markdown("""
             <div class='main-card'>
                 <div class='card-icon'>📜</div>
@@ -149,7 +149,7 @@ def show_main_page():
     
     with col3:
         container = st.container()
-        button = st.button("##", key="catq", label_visibility="collapsed")
+        button = st.button(" ", key="catq")  # Changed from "##" to space
         container.markdown("""
             <div class='main-card'>
                 <div class='card-icon'>🔍</div>
