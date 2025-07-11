@@ -52,9 +52,10 @@ def navigate_to(page):
 
 def show_back_button(prefix=""):
     if len(st.session_state.page_history) > 1:
+        # Add custom CSS for back button
         st.markdown("""
             <style>
-            .back-button {
+            [data-testid="stButton"] button {
                 background-color: #f0f2f6;
                 border: none;
                 padding: 0.5rem 1rem;
@@ -67,15 +68,23 @@ def show_back_button(prefix=""):
                 display: inline-flex;
                 align-items: center;
                 gap: 0.5rem;
+                width: auto !important;
+                height: auto !important;
             }
-            .back-button:hover {
+            [data-testid="stButton"] button:hover {
                 background-color: #e0e2e6;
                 transform: translateX(-5px);
+                box-shadow: none !important;
+                border: none !important;
+            }
+            /* Override any existing button styles for back button */
+            [data-testid="back_button"] button {
+                background-image: none !important;
             }
             </style>
         """, unsafe_allow_html=True)
         
-        # Add prefix to make button ID unique
+        # Create back button with unique key
         if st.button('← Back', key=f"back_button_{prefix}", use_container_width=False):
             previous_page = st.session_state.page_history[-2]
             if previous_page == 'login':
