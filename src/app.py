@@ -511,6 +511,88 @@ def show_upload_page():
             else:
                 st.info(f"No {queue_type.title()} projects uploaded yet")
 
+def show_project_selection_page(queue_type):
+    """Show project selection menu page"""
+    show_back_button(f"selection_{queue_type}")
+    st.header(f"{queue_type.title()} Projects")
+    
+    # Filter files for this queue type
+    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
+                  if k.startswith(queue_type)}
+    
+    if not queue_files:
+        st.info(f"No projects available in {queue_type} queue")
+        return
+    
+    # Get unique project names
+    project_files = [k.split('_')[1] for k in queue_files.keys()]
+    unique_projects = sorted(set(project_files))
+    
+    # Custom CSS for selection page
+    st.markdown("""
+        <style>
+        .selection-card {
+            background-color: #1e3d59;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .project-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    st.subheader("Select a Project")
+    
+    # Create selection cards for each project
+    cols = st.columns(2)
+    for idx, project_name in enumerate(unique_projects):
+        # Get all files for this project
+        project_files = {k: v for k, v in queue_files.items() 
+                        if k.split('_')[1] == project_name}
+        
+        # Calculate total progress
+        total_records = sum(len(df) for df in project_files.values())
+        reviewed = sum(len(df[df['status'] == 'Reviewed']) for df in project_files.values())
+        
+        with cols[idx % 2]:
+            st.markdown(f"""
+                <div class="selection-card">
+                    <div class="project-name">{project_name}</div>
+                    <div>Progress: {reviewed}/{total_records} records reviewed</div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Show progress bar
+            progress = reviewed/total_records if total_records > 0 else 0
+            st.progress(progress)
+            
+            # Add select button
+            if st.button("Select Project", key=f"select_{project_name}"):
+                st.session_state.selected_project = project_name
+                navigate_to(f"{queue_type}_review")
+
+    # Add admin controls if user is admin
+    if st.session_state.current_user['role'] == "Admin":
+        st.markdown("---")
+        with st.expander("🛠️ Admin Controls"):
+            for project_name in unique_projects:
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.markdown(f"**{project_name}**")
+                with col2:
+                    if st.button("🗑️ Remove", key=f"remove_{project_name}"):
+                        keys_to_remove = [k for k in st.session_state.uploaded_files.keys() 
+                                        if k.split('_')[1] == project_name]
+                        for key in keys_to_remove:
+                            del st.session_state.uploaded_files[key]
+                        st.success(f"Removed project: {project_name}")
+                        st.rerun()
+
 # Main page routing logic
 current_page = get_current_page()
 
