@@ -112,11 +112,13 @@ def show_main_page():
     show_back_button()
     st.header("Main Page")
     
-    # Add custom CSS for modern cards
+    # Add custom CSS for main menu cards and back button separately
     st.markdown("""
         <style>
-        /* Main menu card buttons */
-        [data-testid="element-container"] .stButton > button:not([kind="secondary"]) {
+        /* Main menu card buttons - target specific button IDs */
+        [data-testid="nonlicensed"] button,
+        [data-testid="licensed"] button,
+        [data-testid="catq"] button {
             background-color: #1e3d59 !important;
             border-radius: 15px !important;
             padding: 2rem 1.5rem !important;
@@ -137,20 +139,13 @@ def show_main_page():
             background-image: linear-gradient(145deg, #1e3d59 0%, #2a527a 100%) !important;
         }
         
-        [data-testid="element-container"] .stButton > button:not([kind="secondary"]):hover {
+        /* Card hover effects */
+        [data-testid="nonlicensed"] button:hover,
+        [data-testid="licensed"] button:hover,
+        [data-testid="catq"] button:hover {
             transform: translateY(-5px) !important;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
             background-image: linear-gradient(145deg, #2a527a 0%, #1e3d59 100%) !important;
-        }
-        
-        /* Back button specific style */
-        [data-testid="stButton"] button[kind="secondary"] {
-            background-color: #f0f2f6 !important;
-            color: #1e3d59 !important;
-            height: auto !important;
-            background-image: none !important;
-            width: auto !important;
-            padding: 0.5rem 1rem !important;
         }
         
         /* Upload button style */
@@ -158,9 +153,6 @@ def show_main_page():
             background-color: #4CAF50 !important;
             height: 60px !important;
             background-image: none !important;
-        }
-        [data-testid="upload"] button:hover {
-            background-color: #45a049 !important;
         }
         </style>
     """, unsafe_allow_html=True)
