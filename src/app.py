@@ -268,26 +268,31 @@ def show_queue_landing_page(queue_type):
     st.header(f"{queue_type.title()} Projects")
     
     if queue_type == "nonlicensed":
-        # Add project category selection
+        # Get unique project names from uploaded files
+        project_files = [k.split('_')[1] for k in st.session_state.uploaded_files.keys() 
+                        if k.startswith(queue_type)]
+        unique_projects = sorted(set(project_files)) if project_files else ["No projects available"]
+        
+        # Add project selection
         project_category = st.radio(
-            "Select Project Category:",
-            ["Project A", "Project B", "Project C"],  # Replace with your actual project categories
+            "Select Project:",
+            unique_projects,
             horizontal=True,
             key="project_category_select"
         )
         
-        # Filter files by both queue type and project category
+        # Filter files by both queue type and project name
         queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
                       if k.startswith(queue_type) and k.split('_')[1] == project_category}
         
-        st.subheader(f"📋 {project_category} Projects")
+        st.subheader(f"📋 {project_category}")
     else:
         # For other queue types, show all files
         queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
                       if k.startswith(queue_type)}
         st.subheader("📋 Available Projects")
     
-    if not queue_files:
+    if not queue_files or "No projects available" in queue_files:
         st.info(f"No projects available in selected category")
         return
 
