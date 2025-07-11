@@ -433,17 +433,6 @@ def show_upload_page():
             horizontal=False,
             label_visibility="collapsed"
         )
-        
-        # Show project subtype selection if Non-licensed is selected
-        if queue_type == "Non-licensed":
-            st.markdown('<div class="project-type">Project Category</div>', 
-                       unsafe_allow_html=True)
-            project_category = st.radio(
-                "Select project category:",
-                ["Project A", "Project B", "Project C"],  # Replace with your actual project categories
-                key="project_category",
-                label_visibility="collapsed"
-            )
     
     if uploaded_file:
         # Get file name without extension
@@ -460,15 +449,8 @@ def show_upload_page():
             
             mapped_queue = queue_mapping[queue_type]
             
-            # Add category to project title for Non-licensed projects
-            if queue_type == "Non-licensed":
-                project_title = f"{project_category}_{project_title}"
-            
             if handle_file_upload(uploaded_file, mapped_queue, project_title):
-                success_message = (f"✅ Project '{project_title}' uploaded successfully to "
-                                 f"{queue_type} queue")
-                if queue_type == "Non-licensed":
-                    success_message += f" under {project_category}"
+                success_message = f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue"
                 st.success(success_message)
                 time.sleep(2)
                 st.rerun()
