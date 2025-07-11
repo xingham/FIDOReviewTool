@@ -162,7 +162,8 @@ def show_reviewer_page(prefix):  # Add prefix parameter
         if not pending_reviews.empty:
             st.subheader("Records Pending Review")
             for idx, row in pending_reviews.iterrows():
-                with st.expander(f"FIDO: {row.get('FIDO', f'Record {idx + 1}')}:  # Fixed f-string syntax
+                # Fixed the f-string syntax by removing extra colon and comment
+                with st.expander(f"FIDO: {row.get('FIDO', f'Record {idx + 1}')}"):
                     # Display original values
                     st.text(f"UPC: {row.get('BARCODE', 'N/A')}")
                     st.text(f"Brand ID: {row.get('BRAND_ID', 'N/A')}")
