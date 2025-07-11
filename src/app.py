@@ -87,54 +87,60 @@ def show_main_page():
     # Add custom CSS for modern cards
     st.markdown("""
         <style>
-        .main-card {
+        .stButton > button {
             background-color: #1e3d59;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 10px 0px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            cursor: pointer;
-            height: 180px;
+            border-radius: 15px;
+            padding: 2rem 1.5rem;
+            margin: 0.5rem 0;
+            height: 200px;
+            width: 100%;
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            text-align: center;
+            justify-content: center;
+            gap: 1rem;
+            font-size: 1.2rem;
+            line-height: 1.5;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-image: linear-gradient(145deg, #1e3d59 0%, #2a527a 100%);
         }
-        .main-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            background-color: #2a527a;
-        }
-        .card-title {
-            color: white;
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .card-icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            color: white;
-        }
-        .stButton {
-            height: 100%;
-            width: 100%;
-        }
-        .stButton > button {
-            width: 100%;
-            height: 100%;
-            background-color: #1e3d59 !important;
-            border: none !important;
-            color: white !important;
-            padding: 20px !important;
-            border-radius: 10px !important;
-            transition: all 0.3s ease !important;
-        }
+        
         .stButton > button:hover {
-            transform: translateY(-5px) !important;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important;
-            background-color: #2a527a !important;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            background-image: linear-gradient(145deg, #2a527a 0%, #1e3d59 100%);
+        }
+        
+        .stButton > button::before {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Custom button styles */
+        [data-testid="nonlicensed"] {
+            border-left: 5px solid #4CAF50 !important;
+        }
+        
+        [data-testid="licensed"] {
+            border-left: 5px solid #2196F3 !important;
+        }
+        
+        [data-testid="catq"] {
+            border-left: 5px solid #FFC107 !important;
+        }
+        
+        /* Upload button style */
+        [data-testid="upload"] {
+            background-color: #4CAF50 !important;
+            height: 60px !important;
+            background-image: none !important;
+        }
+        
+        [data-testid="upload"]:hover {
+            background-color: #45a049 !important;
         }
         </style>
     """, unsafe_allow_html=True)
