@@ -19,16 +19,15 @@ def navigate_to(page):
         st.session_state.page_history.append(page)
     st.rerun()  # Updated from experimental_rerun()
 
-def show_back_button():
+def show_back_button(prefix=""):
     if len(st.session_state.page_history) > 1:
-        if st.button('← Back'):
-            previous_page = st.session_state.page_history[-2]  # Get previous page
+        # Add prefix to make button ID unique
+        if st.button('← Back', key=f"back_button_{prefix}"):
+            previous_page = st.session_state.page_history[-2]
             if previous_page == 'login':
-                # Clear user session and go back to login
                 st.session_state.current_user = None
                 st.session_state.page_history = ['login']
             else:
-                # Normal back navigation
                 st.session_state.page_history.pop()
             st.rerun()
 
@@ -88,7 +87,7 @@ def handle_file_upload(uploaded_file, queue_type):
 # Function to display the admin page
 def show_admin_page():
     if st.session_state.current_user and st.session_state.current_user['role'] == "Admin":
-        show_back_button()
+        show_back_button('admin')  # Add admin prefix
         st.header("Admin Page")
         
         tab1, tab2 = st.tabs(["Upload Files", "Review Status"])
@@ -129,7 +128,7 @@ def show_admin_page():
         st.error("Access denied. Admins only.")
 
 def show_reviewer_page(prefix):  # Add prefix parameter
-    show_back_button()
+    show_back_button(prefix)  # Pass prefix to back button
     
     # Filter files for this queue
     queue_type = prefix.split('_')[0]  # Extract queue type from prefix
@@ -209,7 +208,7 @@ def show_reviewer_page(prefix):  # Add prefix parameter
             st.success("All records in this file have been reviewed!")
 
 def show_queue_page(queue_type):
-    show_back_button()
+    show_back_button(queue_type)  # Pass queue_type as prefix
     st.header(f"{queue_type.title()} Projects")
     
     # Add tabs for different views
