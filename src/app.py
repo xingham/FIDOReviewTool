@@ -259,39 +259,8 @@ def show_queue_page(queue_type):
     show_back_button(queue_type)
     st.header(f"{queue_type.title()} Projects")
     
-    # Add tabs for different views
-    tab1, tab2 = st.tabs(["Review Projects", "Upload New Project"])
-    
-    with tab1:
-        show_reviewer_page(f"{queue_type}_review")
-    
-    with tab2:
-        if st.session_state.current_user['role'] == "Admin":
-            st.subheader("Upload New Project")
-            # Add project title input
-            project_title = st.text_input(
-                "Project Title:",
-                key=f"title_{queue_type}",
-                placeholder="Enter a descriptive title for this project"
-            )
-            
-            # Add unique key for file uploader based on queue type and timestamp
-            upload_key = f"upload_{queue_type}_{datetime.now().timestamp()}"
-            uploaded_file = st.file_uploader(
-                "Upload CSV File:", 
-                type="csv",
-                key=upload_key
-            )
-            
-            if st.button("Upload Project", key=f"upload_button_{queue_type}_{datetime.now().timestamp()}"):
-                if uploaded_file is not None and project_title:
-                    if handle_file_upload(uploaded_file, queue_type, project_title):
-                        st.success(f"File uploaded successfully to {queue_type} queue")
-                        st.rerun()
-                else:
-                    st.error("Please provide both a project title and select a file")
-        else:
-            st.warning("Only administrators can upload new projects")
+    # Remove upload tab, only show review projects
+    show_reviewer_page(f"{queue_type}_review")
 
 def show_queue_landing_page(queue_type):
     """Show the landing page for a specific queue"""
@@ -307,9 +276,7 @@ def show_queue_landing_page(queue_type):
     
     if not queue_files:
         st.info(f"No projects available in {queue_type} queue")
-        if st.session_state.current_user['role'] == "Admin":
-            show_upload_section(queue_type)
-        return
+        return  # Remove upload section here
 
     # Create project cards
     st.subheader("📋 Available Projects")
@@ -401,7 +368,35 @@ def show_upload_page():
     show_back_button('upload')
     st.header("📤 Upload New Project")
     
-    # Project details section
+    # Custom CSS for upload form
+    st.markdown("""
+        <style>
+        .upload-container {
+            background-color: #1e3d59;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .upload-title {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .upload-section {
+            margin: 1rem 0;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Project details section with dark blue background
+    st.markdown("""
+        <div class="upload-container">
+            <div class="upload-title">Project Details</div>
+        </div>
+    """, unsafe_allow_html=True)
+    
     col1, col2 = st.columns([2, 1])
     
     with col1:
@@ -421,11 +416,13 @@ def show_upload_page():
     
     with col2:
         # Queue selection
-        st.subheader("Project Type")
+        st.markdown('<div style="color: #1e3d59; font-weight: bold;">Project Type</div>', 
+                   unsafe_allow_html=True)
         queue_type = st.radio(
             "Select queue:",
             ["Non-licensed", "Licensed"],
-            horizontal=False
+            horizontal=False,
+            label_visibility="collapsed"
         )
     
     if uploaded_file:
@@ -435,7 +432,6 @@ def show_upload_page():
             if project_title:
                 if handle_file_upload(uploaded_file, queue_type.lower(), project_title):
                     st.success(f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue")
-                    # Clear form after 2 seconds
                     time.sleep(2)
                     st.rerun()
             else:
