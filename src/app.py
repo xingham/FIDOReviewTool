@@ -52,34 +52,30 @@ def navigate_to(page):
 
 def show_back_button(prefix=""):
     if len(st.session_state.page_history) > 1:
-        # Add custom CSS for back button
+        # Add custom CSS for back button only
         st.markdown("""
             <style>
-            [data-testid="stButton"] button {
-                background-color: #f0f2f6;
-                border: none;
-                padding: 0.5rem 1rem;
-                border-radius: 0.5rem;
-                color: #1e3d59;
-                font-size: 1rem;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                margin-bottom: 1rem;
-                display: inline-flex;
-                align-items: center;
-                gap: 0.5rem;
+            [data-testid="back_button"] button {
+                background-color: #f0f2f6 !important;
+                border: none !important;
+                padding: 0.5rem 1rem !important;
+                border-radius: 0.5rem !important;
+                color: #1e3d59 !important;
+                font-size: 1rem !important;
+                cursor: pointer !important;
+                transition: all 0.3s ease !important;
+                margin-bottom: 1rem !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 0.5rem !important;
                 width: auto !important;
                 height: auto !important;
-            }
-            [data-testid="stButton"] button:hover {
-                background-color: #e0e2e6;
-                transform: translateX(-5px);
-                box-shadow: none !important;
-                border: none !important;
-            }
-            /* Override any existing button styles for back button */
-            [data-testid="back_button"] button {
                 background-image: none !important;
+                box-shadow: none !important;
+            }
+            [data-testid="back_button"] button:hover {
+                background-color: #e0e2e6 !important;
+                transform: translateX(-5px) !important;
             }
             </style>
         """, unsafe_allow_html=True)
