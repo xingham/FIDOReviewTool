@@ -68,19 +68,23 @@ def show_main_page():
         if st.button("CATQ"):
             navigate_to('catq')
 
-def handle_file_upload(uploaded_file, queue_type):
+def handle_file_upload(uploaded_file, queue_type, project_title):
     if uploaded_file is not None:
         try:
             df = pd.read_csv(uploaded_file)
             # Add metadata columns
-            df['upload_date'] = datetime.now().strftime("%Y-%m-%d")
+            current_time = datetime.now()
+            df['upload_date'] = current_time.strftime("%Y-%m-%d")
             df['status'] = 'Pending Review'
             df['reviewer'] = ''
             df['review_date'] = ''
             df['comments'] = ''
+            df['project_title'] = project_title
             
-            # Store in session state with unique key
-            file_key = f"{queue_type}_{uploaded_file.name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            # Store in session state with unique key and formatted date
+            formatted_date = current_time.strftime('%Y%m%d_%H%M%S')
+            # Use project title in the key instead of filename
+            file_key = f"{queue_type}_{project_title}_{formatted_date}"
             st.session_state.uploaded_files[file_key] = df
             return True
         except Exception as e:
@@ -281,7 +285,7 @@ def show_queue_landing_page(queue_type):
     # Store current queue in session state
     st.session_state.current_queue = queue_type
     
-    # Filter files for this queue type
+    # Filter and group files by project title
     queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
                   if k.startswith(queue_type)}
     
@@ -324,8 +328,9 @@ def show_queue_landing_page(queue_type):
         # Split the file key correctly
         parts = file_key.split('_')
         queue = parts[0]
-        filename = parts[1]
-        upload_date = '_'.join(parts[2:])  # Join remaining parts as upload date
+        project_title = parts[1]  # Now using project title instead of filename
+        date_str = parts[-1][:8]
+        formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
         
         total_records = len(df)
         reviewed = len(df[df['status'] == 'Reviewed'])
@@ -333,8 +338,8 @@ def show_queue_landing_page(queue_type):
         with cols[idx % 2]:
             st.markdown(f"""
                 <div class="project-card">
-                    <div class="project-title">{filename}</div>
-                    <div class="project-info">Upload Date: {upload_date[:8]}</div>
+                    <div class="project-title">{project_title}</div>
+                    <div class="project-info">Upload Date: {formatted_date}</div>
                     <div class="project-info">Progress: {reviewed}/{total_records} records reviewed</div>
                 </div>
             """, unsafe_allow_html=True)
@@ -348,6 +353,14 @@ def show_queue_landing_page(queue_type):
 
 def show_upload_section(queue_type):
     st.subheader("📤 Upload New Project")
+    
+    # Get project title
+    project_title = st.text_input(
+        "Project Title:",
+        key=f"title_{queue_type}_queue",
+        placeholder="Enter a descriptive title for this project"
+    )
+    
     uploaded_file = st.file_uploader(
         "Upload CSV File:", 
         type="csv",
@@ -355,12 +368,13 @@ def show_upload_section(queue_type):
     )
     
     if st.button("Upload Project", key=f"upload_button_{queue_type}_queue"):
-        if uploaded_file is not None:
-            if handle_file_upload(uploaded_file, queue_type):
+        if uploaded_file is not None and project_title:
+            # Use project title instead of filename
+            if handle_file_upload(uploaded_file, queue_type, project_title):
                 st.success(f"File uploaded successfully to {queue_type} queue")
                 st.rerun()
         else:
-            st.error("Please select a file to upload")
+            st.error("Please provide both a project title and select a file")
 
 # Main page routing logic
 current_page = get_current_page()
