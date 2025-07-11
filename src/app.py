@@ -94,7 +94,7 @@ def show_main_page():
             margin: 10px 0px;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
-            height: 150px;
+            height: 180px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -104,6 +104,7 @@ def show_main_page():
         .main-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            background-color: #2a527a;
         }
         .card-title {
             color: white;
@@ -112,18 +113,22 @@ def show_main_page():
             margin-bottom: 10px;
         }
         .card-icon {
-            font-size: 2rem;
-            margin-bottom: 10px;
+            font-size: 3rem;
+            margin-bottom: 15px;
             color: white;
         }
         .upload-button {
             background-color: #4CAF50;
             color: white;
-            padding: 10px 20px;
+            padding: 15px 30px;
             border-radius: 5px;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 20px;
             cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .upload-button:hover {
+            background-color: #45a049;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -132,45 +137,38 @@ def show_main_page():
     col1, col2, col3 = st.columns(3)
     
     with col1:
+        if st.button("Non-Licensed FIDO Review", key="nonlicensed"):
+            navigate_to('nonlicensed')
         st.markdown("""
-            <div class='main-card' onclick='document.querySelector("[data-testid=\'nonlicensed-button\']").click()'>
+            <div class='main-card'>
                 <div class='card-icon'>📋</div>
-                <div class='card-title'>Non-Licensed FIDO Review</div>
+                <div class='card-title'>Non-Licensed<br>FIDO Review</div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button("Non-Licensed FIDO Review Projects", key="nonlicensed-button", visible=False):
-            navigate_to('nonlicensed')
     
     with col2:
+        if st.button("Licensed FIDO Review", key="licensed"):
+            navigate_to('licensed')
         st.markdown("""
-            <div class='main-card' onclick='document.querySelector("[data-testid=\'licensed-button\']").click()'>
+            <div class='main-card'>
                 <div class='card-icon'>📜</div>
-                <div class='card-title'>Licensed FIDO Review</div>
+                <div class='card-title'>Licensed<br>FIDO Review</div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button("Licensed FIDO Review Projects", key="licensed-button", visible=False):
-            navigate_to('licensed')
     
     with col3:
+        if st.button("CATQ", key="catq"):
+            navigate_to('catq')
         st.markdown("""
-            <div class='main-card' onclick='document.querySelector("[data-testid=\'catq-button\']").click()'>
+            <div class='main-card'>
                 <div class='card-icon'>🔍</div>
                 <div class='card-title'>CATQ</div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button("CATQ", key="catq-button", visible=False):
-            navigate_to('catq')
     
     # Add Upload button for admins in a centered container
     if st.session_state.current_user['role'] == "Admin":
-        st.markdown("""
-            <div style='display: flex; justify-content: center; margin-top: 20px;'>
-                <div class='upload-button' onclick='document.querySelector("[data-testid=\'upload-button\']").click()'>
-                    📤 Upload New Project
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        if st.button("Upload", key="upload-button", visible=False):
+        if st.button("📤 Upload New Project", type="primary", key="upload"):
             navigate_to('upload')
 
 def handle_file_upload(uploaded_file, queue_type, project_title):
