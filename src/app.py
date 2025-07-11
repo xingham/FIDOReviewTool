@@ -117,19 +117,6 @@ def show_main_page():
             margin-bottom: 15px;
             color: white;
         }
-        .upload-button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px 30px;
-            border-radius: 5px;
-            text-align: center;
-            margin-top: 20px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        .upload-button:hover {
-            background-color: #45a049;
-        }
         </style>
     """, unsafe_allow_html=True)
     
@@ -137,39 +124,65 @@ def show_main_page():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("Non-Licensed FIDO Review", key="nonlicensed"):
-            navigate_to('nonlicensed')
-        st.markdown("""
+        container = st.container()
+        button = st.button("##", key="nonlicensed", label_visibility="collapsed")
+        container.markdown("""
             <div class='main-card'>
                 <div class='card-icon'>📋</div>
                 <div class='card-title'>Non-Licensed<br>FIDO Review</div>
             </div>
         """, unsafe_allow_html=True)
+        if button:
+            navigate_to('nonlicensed')
     
     with col2:
-        if st.button("Licensed FIDO Review", key="licensed"):
-            navigate_to('licensed')
-        st.markdown("""
+        container = st.container()
+        button = st.button("##", key="licensed", label_visibility="collapsed")
+        container.markdown("""
             <div class='main-card'>
                 <div class='card-icon'>📜</div>
                 <div class='card-title'>Licensed<br>FIDO Review</div>
             </div>
         """, unsafe_allow_html=True)
+        if button:
+            navigate_to('licensed')
     
     with col3:
-        if st.button("CATQ", key="catq"):
-            navigate_to('catq')
-        st.markdown("""
+        container = st.container()
+        button = st.button("##", key="catq", label_visibility="collapsed")
+        container.markdown("""
             <div class='main-card'>
                 <div class='card-icon'>🔍</div>
                 <div class='card-title'>CATQ</div>
             </div>
         """, unsafe_allow_html=True)
+        if button:
+            navigate_to('catq')
     
-    # Add Upload button for admins in a centered container
+    # Add Upload button for admins
     if st.session_state.current_user['role'] == "Admin":
-        if st.button("📤 Upload New Project", type="primary", key="upload"):
-            navigate_to('upload')
+        st.markdown("""
+            <style>
+            .upload-button {
+                background-color: #4CAF50;
+                color: white;
+                padding: 15px 30px;
+                border-radius: 5px;
+                text-align: center;
+                margin-top: 20px;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            }
+            .upload-button:hover {
+                background-color: #45a049;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("📤 Upload New Project", type="primary", key="upload"):
+                navigate_to('upload')
 
 def handle_file_upload(uploaded_file, queue_type, project_title):
     if uploaded_file is not None:
