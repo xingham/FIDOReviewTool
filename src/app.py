@@ -148,7 +148,7 @@ def show_admin_page():
 def show_reviewer_page(prefix, show_back=True):
     """Show the reviewer interface"""
     queue_type = prefix.split('_')[0]
-    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
+    queue_files = {k: v for k in st.session_state.uploaded_files.keys() 
                   if k.startswith(queue_type)}
     
     if not queue_files:
@@ -278,7 +278,7 @@ def show_queue_landing_page(queue_type):
     st.header(f"{queue_type.title()} Projects")
     
     # Filter files for this queue type
-    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
+    queue_files = {k: v for k in st.session_state.uploaded_files.keys() 
                   if k.startswith(queue_type)}
     
     if queue_type == "nonlicensed":
@@ -295,7 +295,7 @@ def show_queue_landing_page(queue_type):
         
         if project_category != "No projects available":
             # Filter files for selected project
-            displayed_files = {k: v for k, v in queue_files.items() 
+            displayed_files = {k: v for k in queue_files.keys() 
                             if k.split('_')[1] == project_category}
             st.subheader(f"📋 {project_category} Files")
             
@@ -485,7 +485,7 @@ def show_upload_page():
         
         # Group projects by queue type
         for queue_type in ["nonlicensed", "licensed"]:
-            queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
+            queue_files = {k: v for k in st.session_state.uploaded_files.keys() 
                          if k.startswith(queue_type)}
             
             if queue_files:
@@ -543,7 +543,9 @@ def show_project_selection_page(queue_type):
     
     # Get unique project names and their statistics
     project_stats = {}
-    for project_name in sorted(set(k.split('_')[1] for k in queue_files.keys())):
+    unique_projects = sorted(set(k.split('_')[1] for k in queue_files.keys()))
+    
+    for project_name in unique_projects:
         project_files = {k: v for k, v in queue_files.items() 
                         if k.split('_')[1] == project_name}
         total_records = sum(len(df) for df in project_files.values())
@@ -593,7 +595,7 @@ def show_project_selection_page(queue_type):
     if st.session_state.current_user['role'] == "Admin":
         st.markdown("---")
         with st.expander("🛠️ Admin Controls"):
-            for project_name in unique_projects:
+            for project_name in unique_projects:  # Now unique_projects is defined
                 col1, col2 = st.columns([3, 1])
                 with col1:
                     st.markdown(f"**{project_name}**")
