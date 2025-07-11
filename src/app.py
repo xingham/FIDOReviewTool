@@ -145,11 +145,14 @@ def show_admin_page():
     else:
         st.error("Access denied. Admins only.")
 
-def show_reviewer_page(prefix):
-    show_back_button(prefix)
+def show_reviewer_page(prefix, show_back=True):
+    """Show the reviewer interface with optional back button"""
+    if show_back:
+        show_back_button(prefix)
     
     queue_type = prefix.split('_')[0]
-    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() if k.startswith(queue_type)}
+    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
+                  if k.startswith(queue_type)}
     
     if not queue_files:
         st.info(f"No files available for review in {queue_type} queue")
@@ -260,11 +263,15 @@ def show_reviewer_page(prefix):
                 st.dataframe(download_df)
 
 def show_queue_page(queue_type):
-    show_back_button(queue_type)
-    st.header(f"{queue_type.title()} Projects")
+    """Show the review interface for selected project"""
+    if not st.session_state.selected_project:
+        show_project_selection_page(queue_type)
+        return
     
-    # Remove upload tab, only show review projects
-    show_reviewer_page(f"{queue_type}_review")
+    st.header(f"Reviewing: {st.session_state.selected_project}")
+    
+    # Show reviewer page without additional back button
+    show_reviewer_page(f"{queue_type}_review", show_back=False)
 
 def show_queue_landing_page(queue_type):
     """Show the landing page for a specific queue"""
@@ -441,21 +448,32 @@ def show_upload_page():
                 horizontal=False,
                 label_visibility="collapsed"
             )
+            
+            # Add priority selection
+            st.markdown('<div class="project-type">Priority Level</div>', 
+                       unsafe_allow_html=True)
+            priority = st.select_slider(
+                "Select priority:",
+                options=["Low Priority", "Medium Priority", "High Priority"],
+                value="Medium Priority",
+                label_visibility="collapsed"
+            )
         
         if uploaded_file:
-            # Get file name without extension
             project_title = uploaded_file.name.rsplit('.', 1)[0]
             st.success("✅ File loaded successfully!")
             st.info(f"Project Title: {project_title}")
             
             if st.button("Upload Project", type="primary"):
-                # Map radio button selection to queue type
                 queue_mapping = {
                     "Non-licensed": "nonlicensed",
                     "Licensed": "licensed"
                 }
                 
                 mapped_queue = queue_mapping[queue_type]
+                
+                # Add priority to project title
+                project_title = f"{project_title}_{priority.split()[0].lower()}"
                 
                 if handle_file_upload(uploaded_file, mapped_queue, project_title):
                     success_message = f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue"
@@ -524,56 +542,52 @@ def show_project_selection_page(queue_type):
         st.info(f"No projects available in {queue_type} queue")
         return
     
-    # Get unique project names
-    project_files = [k.split('_')[1] for k in queue_files.keys()]
-    unique_projects = sorted(set(project_files))
-    
-    # Custom CSS for selection page
-    st.markdown("""
-        <style>
-        .selection-card {
-            background-color: #1e3d59;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            color: white;
-            margin-bottom: 1rem;
-        }
-        .project-name {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    st.subheader("Select a Project")
-    
-    # Create selection cards for each project
-    cols = st.columns(2)
-    for idx, project_name in enumerate(unique_projects):
-        # Get all files for this project
+    # Get unique project names and their statistics
+    project_stats = {}
+    for project_name in sorted(set(k.split('_')[1] for k in queue_files.keys())):
         project_files = {k: v for k, v in queue_files.items() 
                         if k.split('_')[1] == project_name}
-        
-        # Calculate total progress
         total_records = sum(len(df) for df in project_files.values())
         reviewed = sum(len(df[df['status'] == 'Reviewed']) for df in project_files.values())
-        
-        with cols[idx % 2]:
+        priority = project_name.split('_')[-1].title()
+        project_stats[project_name] = {
+            'total': total_records,
+            'reviewed': reviewed,
+            'priority': priority,
+            'progress': (reviewed/total_records * 100) if total_records > 0 else 0
+        }
+    
+    # Create two columns for selection and statistics
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        st.subheader("Select Project")
+        selected_project = st.selectbox(
+            "Choose a project:",
+            options=list(project_stats.keys()),
+            format_func=lambda x: x.rsplit('_', 1)[0]  # Remove priority from display
+        )
+    
+    with col2:
+        if selected_project:
+            st.subheader("Project Statistics")
+            stats = project_stats[selected_project]
+            
+            # Display statistics in a card
             st.markdown(f"""
-                <div class="selection-card">
-                    <div class="project-name">{project_name}</div>
-                    <div>Progress: {reviewed}/{total_records} records reviewed</div>
+                <div style='padding: 1rem; background-color: #1e3d59; border-radius: 0.5rem; color: white;'>
+                    <h3>{selected_project.rsplit('_', 1)[0]}</h3>
+                    <p>Priority: {stats['priority']}</p>
+                    <p>Total Records: {stats['total']}</p>
+                    <p>Reviewed: {stats['reviewed']}</p>
+                    <p>Progress: {stats['progress']:.1f}%</p>
                 </div>
             """, unsafe_allow_html=True)
             
-            # Show progress bar
-            progress = reviewed/total_records if total_records > 0 else 0
-            st.progress(progress)
+            st.progress(stats['progress']/100)
             
-            # Add select button
-            if st.button("Select Project", key=f"select_{project_name}"):
-                st.session_state.selected_project = project_name
+            if st.button("Begin Review", type="primary"):
+                st.session_state.selected_project = selected_project
                 navigate_to(f"{queue_type}_review")
 
     # Add admin controls if user is admin
