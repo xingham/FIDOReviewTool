@@ -127,48 +127,52 @@ def show_admin_page():
     else:
         st.error("Access denied. Admins only.")
 
-def show_reviewer_page(prefix):  # Add prefix parameter
-    show_back_button(prefix)  # Pass prefix to back button
+def show_reviewer_page(prefix):
+    show_back_button(prefix)
     
-    # Filter files for this queue
-    queue_type = prefix.split('_')[0]  # Extract queue type from prefix
+    queue_type = prefix.split('_')[0]
     queue_files = {k: v for k, v in st.session_state.uploaded_files.items() if k.startswith(queue_type)}
     
     if not queue_files:
         st.info(f"No files available for review in {queue_type} queue")
         return
     
-    # File selection with unique key
-    selected_file = st.selectbox(
-        "Select file to review:",
-        options=list(queue_files.keys()),
-        format_func=lambda x: x.split('_')[1],
-        key=f"select_{prefix}"  # Add unique key
-    )
+    # Add tabs for reviewing and downloading
+    tab1, tab2 = st.tabs(["Review FIDOs", "Download Reviewed"])
     
-    if selected_file:
-        df = queue_files[selected_file]
-        pending_reviews = df[df['status'] == 'Pending Review']
+    with tab1:
+        selected_file = st.selectbox(
+            "Select file to review:",
+            options=list(queue_files.keys()),
+            format_func=lambda x: x.split('_')[1],
+            key=f"select_{prefix}"
+        )
         
-        # Add save all button in sidebar with unique key
-        with st.sidebar:
-            st.markdown("### 🛠️ Controls")
-            if st.button("💾 Save All Reviews", key=f"save_all_{prefix}"):
-                st.session_state.uploaded_files[selected_file] = df
-                st.success("✅ All changes saved")
-                st.rerun()
-        
-        if not pending_reviews.empty:
-            st.subheader("Records Pending Review")
-            for idx, row in pending_reviews.iterrows():
-                # Fixed the f-string syntax by removing extra colon and comment
-                with st.expander(f"FIDO: {row.get('FIDO', f'Record {idx + 1}')}"):
-                    # Display original values
-                    st.text(f"UPC: {row.get('BARCODE', 'N/A')}")
-                    st.text(f"Brand ID: {row.get('BRAND_ID', 'N/A')}")
-                    st.text(f"Original Brand: {row.get('BRAND', 'N/A')}")
-                    st.text(f"Category: {row.get('CATEGORY', 'N/A')}")
-                    st.text(f"Description: {row.get('DESCRIPTION', 'N/A')}")
+        if selected_file:
+            df = queue_files[selected_file]
+            pending_reviews = df[df['status'] == 'Pending Review']
+            
+            # Add save all button in sidebar
+            with st.sidebar:
+                st.markdown("### 🛠️ Controls")
+                if st.button("💾 Save All Reviews", key=f"save_all_{prefix}"):
+                    st.session_state.uploaded_files[selected_file] = df
+                    st.success("✅ All changes saved")
+                    st.rerun()
+            
+            if not pending_reviews.empty:
+                st.subheader("Records Pending Review")
+                for idx, row in pending_reviews.iterrows():
+                    st.markdown(f"### FIDO: {row.get('FIDO', f'Record {idx + 1}')}")
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.text(f"UPC: {row.get('BARCODE', 'N/A')}")
+                        st.text(f"Brand ID: {row.get('BRAND_ID', 'N/A')}")
+                        st.text(f"Original Brand: {row.get('BRAND', 'N/A')}")
+                    with col2:
+                        st.text(f"Category: {row.get('CATEGORY', 'N/A')}")
+                        st.text(f"Description: {row.get('DESCRIPTION', 'N/A')}")
                     
                     # Edit fields with unique keys
                     df.at[idx, 'updated_description'] = st.text_area(
@@ -204,8 +208,38 @@ def show_reviewer_page(prefix):  # Add prefix parameter
                         st.session_state.uploaded_files[selected_file] = df
                         st.success("✅ Review submitted successfully")
                         st.rerun()
-        else:
-            st.success("All records in this file have been reviewed!")
+                    
+                    st.markdown("---")  # Add separator between records
+            else:
+                st.success("All records in this file have been reviewed!")
+    
+    with tab2:
+        st.subheader("Download Reviewed FIDOs")
+        for file_key, df in queue_files.items():
+            reviewed_df = df[df['status'] == 'Reviewed'].copy()
+            if not reviewed_df.empty:
+                filename = file_key.split('_')[1]
+                st.markdown(f"#### {filename}")
+                
+                # Prepare download data in original format
+                download_df = reviewed_df[['FIDO', 'BARCODE', 'BRAND_ID', 'updated_brand', 
+                                         'updated_category', 'updated_description', 
+                                         'comments', 'reviewer', 'review_date']]
+                download_df.columns = ['FIDO', 'BARCODE', 'BRAND_ID', 'BRAND', 
+                                     'CATEGORY', 'DESCRIPTION', 
+                                     'REVIEW_COMMENTS', 'REVIEWER', 'REVIEW_DATE']
+                
+                csv = download_df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label=f"⬇️ Download {filename} Reviews",
+                    data=csv,
+                    file_name=f"Reviewed_{filename}",
+                    mime="text/csv",
+                    key=f"download_{file_key}"
+                )
+                
+                # Show preview
+                st.dataframe(download_df)
 
 def show_queue_page(queue_type):
     show_back_button(queue_type)  # Pass queue_type as prefix
