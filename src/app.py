@@ -399,6 +399,55 @@ def show_upload_page():
     # Create tabs for upload and overview
     upload_tab, overview_tab = st.tabs(["Upload New Project", "Project Overview"])
     
+    with upload_tab:
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            uploaded_file = st.file_uploader(
+                "Upload CSV File:", 
+                type="csv",
+                key="admin_upload"
+            )
+        
+        with col2:
+            st.markdown('<div style="color: white;">Project Type</div>', 
+                       unsafe_allow_html=True)
+            queue_type = st.radio(
+                "Select queue:",
+                ["Non-licensed", "Licensed"],
+                horizontal=False,
+                label_visibility="collapsed"
+            )
+            
+            st.markdown('<div style="color: white;">Priority Level</div>', 
+                       unsafe_allow_html=True)
+            priority = st.select_slider(
+                "Select priority:",
+                options=["Low Priority", "Medium Priority", "High Priority"],
+                value="Medium Priority",
+                label_visibility="collapsed"
+            )
+        
+        if uploaded_file:
+            project_title = uploaded_file.name.rsplit('.', 1)[0]
+            st.success("✅ File loaded successfully!")
+            st.info(f"Project Title: {project_title}")
+            
+            if st.button("Upload Project", type="primary"):
+                queue_mapping = {
+                    "Non-licensed": "nonlicensed",
+                    "Licensed": "licensed"
+                }
+                mapped_queue = queue_mapping[queue_type]
+                # Add priority to project title
+                project_title = f"{project_title}_{priority.split()[0].lower()}"
+                
+                if handle_file_upload(uploaded_file, mapped_queue, project_title):
+                    st.success(f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue")
+                    time.sleep(2)
+                    st.rerun()
+    
+    # Rest of the overview tab code remains the same...
     with overview_tab:
         st.subheader("Current Projects")
         
