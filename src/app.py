@@ -10,16 +10,18 @@ if 'current_user' not in st.session_state:
     st.session_state.current_user = None
 if 'page_history' not in st.session_state:
     st.session_state.page_history = ['login']
-# Add new session state for uploaded files
 if 'uploaded_files' not in st.session_state:
     st.session_state.uploaded_files = {}
 if 'selected_project' not in st.session_state:
     st.session_state.selected_project = None
+if 'current_queue' not in st.session_state:
+    st.session_state.current_queue = None
 
 def navigate_to(page):
+    """Handle navigation between pages"""
     if page not in st.session_state.page_history:
         st.session_state.page_history.append(page)
-    st.rerun()  # Updated from experimental_rerun()
+    st.rerun()
 
 def show_back_button(prefix=""):
     if len(st.session_state.page_history) > 1:
@@ -272,16 +274,20 @@ def show_queue_page(queue_type):
             st.warning("Only administrators can upload new projects")
 
 def show_queue_landing_page(queue_type):
-    show_back_button(queue_type)
+    """Show the landing page for a specific queue"""
+    show_back_button(f"landing_{queue_type}")
     st.header(f"{queue_type.title()} Projects")
     
+    # Store current queue in session state
+    st.session_state.current_queue = queue_type
+    
     # Filter files for this queue type
-    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() if k.startswith(queue_type)}
+    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
+                  if k.startswith(queue_type)}
     
     if not queue_files:
         st.info(f"No projects available in {queue_type} queue")
         if st.session_state.current_user['role'] == "Admin":
-            st.warning("Upload a project to get started")
             show_upload_section(queue_type)
         return
 
@@ -291,24 +297,17 @@ def show_queue_landing_page(queue_type):
     for file_key, df in queue_files.items():
         _, filename, upload_date = file_key.split('_')
         total_records = len(df)
-        pending = len(df[df['status'] == 'Pending Review'])
         reviewed = len(df[df['status'] == 'Reviewed'])
         
-        # Create a card-like container for each project
+        # Project card
         with st.container():
-            st.markdown(f"""
-            <div style='padding: 1rem; border-radius: 0.5rem; background-color: #f0f2f6; margin-bottom: 1rem;'>
-                <h3>{filename}</h3>
-                <p>Upload Date: {upload_date[:4]}/{upload_date[4:6]}/{upload_date[6:8]}</p>
-                <p>Progress: {reviewed}/{total_records} records reviewed</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
             col1, col2 = st.columns([3, 1])
             with col1:
+                st.markdown(f"### {filename}")
+                st.text(f"Records reviewed: {reviewed}/{total_records}")
                 st.progress(reviewed/total_records if total_records > 0 else 0)
             with col2:
-                if st.button("Review Project", key=f"review_{file_key}"):
+                if st.button("Review", key=f"review_{file_key}"):
                     st.session_state.selected_project = file_key
                     navigate_to(f"{queue_type}_review")
 
@@ -337,9 +336,11 @@ if st.session_state.current_user:
     elif current_page == 'main':
         show_main_page()
     elif current_page in ['nonlicensed', 'licensed', 'catq']:
-        if current_page + '_review' in st.session_state.page_history:
+        if st.session_state.selected_project:
             show_queue_page(current_page)
         else:
             show_queue_landing_page(current_page)
+    elif current_page.endswith('_review'):
+        show_queue_page(current_page.split('_')[0])
 else:
     show_login_panel()
