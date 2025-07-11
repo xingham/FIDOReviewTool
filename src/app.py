@@ -292,6 +292,21 @@ def show_queue_landing_page(queue_type):
             displayed_files = {k: v for k, v in queue_files.items() 
                             if k.split('_')[1] == project_category}
             st.subheader(f"📋 {project_category} Files")
+            
+            # Add admin controls
+            if st.session_state.current_user['role'] == "Admin":
+                with st.expander("🛠️ Admin Controls"):
+                    if st.button("🗑️ Remove Project", key=f"remove_{project_category}"):
+                        if st.session_state.current_user['role'] == "Admin":
+                            # Remove all files for this project
+                            keys_to_remove = [k for k in st.session_state.uploaded_files.keys() 
+                                            if k.split('_')[1] == project_category]
+                            for key in keys_to_remove:
+                                del st.session_state.uploaded_files[key]
+                            st.success(f"Project '{project_category}' removed successfully")
+                            st.rerun()
+                        else:
+                            st.error("Only admins can remove projects")
         else:
             displayed_files = {}
     else:
@@ -325,9 +340,21 @@ def show_queue_landing_page(queue_type):
             progress = reviewed/total_records if total_records > 0 else 0
             st.progress(progress)
             
-            if st.button("Review Project", key=f"review_{file_key}"):
-                st.session_state.selected_project = file_key
-                navigate_to(f"{queue_type}_review")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("📄 Review", key=f"review_{file_key}"):
+                    st.session_state.selected_project = file_key
+                    navigate_to(f"{queue_type}_review")
+            with col2:
+                # Add download button for each file
+                csv = df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="⬇️ Download",
+                    data=csv,
+                    file_name=f"{project_name}_{formatted_date}.csv",
+                    mime="text/csv",
+                    key=f"download_{file_key}"
+                )
 
 def show_upload_section(queue_type):
     st.subheader("📤 Upload New Project")
