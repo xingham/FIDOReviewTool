@@ -399,93 +399,13 @@ def show_upload_page():
     # Create tabs for upload and overview
     upload_tab, overview_tab = st.tabs(["Upload New Project", "Project Overview"])
     
-    with upload_tab:
-        # Custom CSS for upload form
-        st.markdown("""
-            <style>
-            .upload-container {
-                background-color: #1e3d59;
-                padding: 2rem;
-                border-radius: 0.5rem;
-                color: white;
-                margin-bottom: 1rem;
-            }
-            .upload-title, .project-type {
-                color: white;
-                font-size: 1.2rem;
-                font-weight: bold;
-                margin-bottom: 1rem;
-            }
-            .upload-section {
-                margin: 1rem 0;
-            }
-            </style>
-        """, unsafe_allow_html=True)
-        
-        # Project details section with dark blue background
-        st.markdown("""
-            <div class="upload-container">
-                <div class="upload-title">Project Details</div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        col1, col2 = st.columns([2, 1])
-        
-        with col1:
-            uploaded_file = st.file_uploader(
-                "Upload CSV File:", 
-                type="csv",
-                key="admin_upload"
-            )
-        
-        with col2:
-            st.markdown('<div class="project-type">Project Type</div>', 
-                       unsafe_allow_html=True)
-            queue_type = st.radio(
-                "Select queue:",
-                ["Non-licensed", "Licensed"],
-                horizontal=False,
-                label_visibility="collapsed"
-            )
-            
-            # Add priority selection
-            st.markdown('<div class="project-type">Priority Level</div>', 
-                       unsafe_allow_html=True)
-            priority = st.select_slider(
-                "Select priority:",
-                options=["Low Priority", "Medium Priority", "High Priority"],
-                value="Medium Priority",
-                label_visibility="collapsed"
-            )
-        
-        if uploaded_file:
-            project_title = uploaded_file.name.rsplit('.', 1)[0]
-            st.success("✅ File loaded successfully!")
-            st.info(f"Project Title: {project_title}")
-            
-            if st.button("Upload Project", type="primary"):
-                queue_mapping = {
-                    "Non-licensed": "nonlicensed",
-                    "Licensed": "licensed"
-                }
-                
-                mapped_queue = queue_mapping[queue_type]
-                
-                # Add priority to project title
-                project_title = f"{project_title}_{priority.split()[0].lower()}"
-                
-                if handle_file_upload(uploaded_file, mapped_queue, project_title):
-                    success_message = f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue"
-                    st.success(success_message)
-                    time.sleep(2)
-                    st.rerun()
-
     with overview_tab:
         st.subheader("Current Projects")
         
         # Group projects by queue type
         for queue_type in ["nonlicensed", "licensed"]:
-            queue_files = {k: v for k in st.session_state.uploaded_files.keys() 
+            # Fix the dictionary comprehension
+            queue_files = {k: st.session_state.uploaded_files[k] for k in st.session_state.uploaded_files.keys() 
                          if k.startswith(queue_type)}
             
             if queue_files:
