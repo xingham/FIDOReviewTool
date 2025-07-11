@@ -100,6 +100,7 @@ def show_main_page():
             justify-content: center;
             align-items: center;
             text-align: center;
+            position: relative;  /* Add this */
         }
         .main-card:hover {
             transform: translateY(-5px);
@@ -117,6 +118,15 @@ def show_main_page():
             margin-bottom: 15px;
             color: white;
         }
+        .invisible-button {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
         </style>
     """, unsafe_allow_html=True)
     
@@ -125,38 +135,35 @@ def show_main_page():
     
     with col1:
         container = st.container()
-        button = st.button(" ", key="nonlicensed")  # Changed from "##" to space
         container.markdown("""
             <div class='main-card'>
                 <div class='card-icon'>📋</div>
                 <div class='card-title'>Non-Licensed<br>FIDO Review</div>
             </div>
         """, unsafe_allow_html=True)
-        if button:
+        if st.button(" ", key="nonlicensed", help="Non-Licensed FIDO Review"):
             navigate_to('nonlicensed')
     
     with col2:
         container = st.container()
-        button = st.button(" ", key="licensed")  # Changed from "##" to space
         container.markdown("""
             <div class='main-card'>
                 <div class='card-icon'>📜</div>
                 <div class='card-title'>Licensed<br>FIDO Review</div>
             </div>
         """, unsafe_allow_html=True)
-        if button:
+        if st.button(" ", key="licensed", help="Licensed FIDO Review"):
             navigate_to('licensed')
     
     with col3:
         container = st.container()
-        button = st.button(" ", key="catq")  # Changed from "##" to space
         container.markdown("""
             <div class='main-card'>
                 <div class='card-icon'>🔍</div>
                 <div class='card-title'>CATQ</div>
             </div>
         """, unsafe_allow_html=True)
-        if button:
+        if st.button(" ", key="catq", help="CATQ"):
             navigate_to('catq')
     
     # Add Upload button for admins
