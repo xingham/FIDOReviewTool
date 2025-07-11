@@ -294,22 +294,45 @@ def show_queue_landing_page(queue_type):
     # Create project cards
     st.subheader("📋 Available Projects")
     
-    for file_key, df in queue_files.items():
+    # Custom CSS for cards
+    st.markdown("""
+        <style>
+        .project-card {
+            padding: 1rem;
+            background-color: #f0f2f6;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .project-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Display projects in a grid
+    cols = st.columns(2)
+    for idx, (file_key, df) in enumerate(queue_files.items()):
         _, filename, upload_date = file_key.split('_')
         total_records = len(df)
         reviewed = len(df[df['status'] == 'Reviewed'])
         
-        # Project card
-        with st.container():
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.markdown(f"### {filename}")
-                st.text(f"Records reviewed: {reviewed}/{total_records}")
-                st.progress(reviewed/total_records if total_records > 0 else 0)
-            with col2:
-                if st.button("Review", key=f"review_{file_key}"):
-                    st.session_state.selected_project = file_key
-                    navigate_to(f"{queue_type}_review")
+        with cols[idx % 2]:
+            st.markdown(f"""
+                <div class="project-card">
+                    <div class="project-title">{filename}</div>
+                    <p>Upload Date: {upload_date[:4]}/{upload_date[4:6]}/{upload_date[6:8]}</p>
+                    <p>Progress: {reviewed}/{total_records}</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            progress = reviewed/total_records if total_records > 0 else 0
+            st.progress(progress)
+            
+            if st.button("Review Project", key=f"review_{file_key}"):
+                st.session_state.selected_project = file_key
+                navigate_to(f"{queue_type}_review")
 
 def show_upload_section(queue_type):
     st.subheader("📤 Upload New Project")
