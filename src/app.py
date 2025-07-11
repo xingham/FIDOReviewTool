@@ -91,26 +91,40 @@ def show_admin_page():
         show_back_button()
         st.header("Admin Page")
         
-        # File upload section
-        st.subheader("Upload New Files")
-        queue_type = st.selectbox("Select Queue:", ["Non-licensed", "Licensed", "CATQ"])
-        uploaded_file = st.file_uploader("Upload CSV File:", type="csv")
+        tab1, tab2 = st.tabs(["Upload Files", "Review Status"])
         
-        if st.button("Upload Project"):
-            if uploaded_file is not None:
-                if handle_file_upload(uploaded_file, queue_type.lower()):
-                    st.success(f"File uploaded successfully to {queue_type} queue")
-            else:
-                st.error("Please select a file to upload")
+        with tab1:
+            st.subheader("Upload New Files")
+            queue_type = st.selectbox("Select Queue:", ["Non-licensed", "Licensed", "CATQ"])
+            uploaded_file = st.file_uploader("Upload CSV File:", type="csv")
+            
+            if st.button("Upload Project"):
+                if uploaded_file is not None:
+                    if handle_file_upload(uploaded_file, queue_type.lower()):
+                        st.success(f"File uploaded successfully to {queue_type} queue")
+                else:
+                    st.error("Please select a file to upload")
         
-        # Display uploaded files
-        st.subheader("Uploaded Files Status")
-        for file_key, df in st.session_state.uploaded_files.items():
-            queue, filename, _ = file_key.split('_', 2)
-            with st.expander(f"{filename} ({queue})"):
-                st.dataframe(df)
-                st.text(f"Total records: {len(df)}")
-                st.text(f"Pending review: {len(df[df['status'] == 'Pending Review'])}")
+        with tab2:
+            st.subheader("Review Status")
+            for file_key, df in st.session_state.uploaded_files.items():
+                queue, filename, _ = file_key.split('_', 2)
+                with st.expander(f"{filename} ({queue})"):
+                    st.dataframe(df)
+                    reviewed = len(df[df['status'] == 'Reviewed'])
+                    total = len(df)
+                    st.progress(reviewed / total)
+                    st.text(f"Progress: {reviewed}/{total} records reviewed")
+                    
+                    # Download button for reviewed data
+                    if reviewed > 0:
+                        csv = df.to_csv(index=False).encode('utf-8')
+                        st.download_button(
+                            label="⬇️ Download Reviewed Data",
+                            data=csv,
+                            file_name=f"Reviewed_{filename}",
+                            mime="text/csv"
+                        )
     else:
         st.error("Access denied. Admins only.")
 
@@ -136,31 +150,89 @@ def show_reviewer_page(queue_type):
         df = queue_files[selected_file]
         pending_reviews = df[df['status'] == 'Pending Review']
         
+        # Add save all button in sidebar
+        with st.sidebar:
+            st.markdown("### 🛠️ Controls")
+            if st.button("💾 Save All Reviews"):
+                st.session_state.uploaded_files[selected_file] = df
+                st.success("✅ All changes saved")
+                st.rerun()
+        
         if not pending_reviews.empty:
             st.subheader("Records Pending Review")
             for idx, row in pending_reviews.iterrows():
-                with st.expander(f"Record {idx + 1}"):
-                    # Display record details
-                    for col in row.index:
-                        if col not in ['status', 'reviewer', 'review_date', 'comments']:
-                            st.text(f"{col}: {row[col]}")
+                with st.expander(f"FIDO: {row.get('FIDO', f'Record {idx + 1}')}"):
+                    # Display original values
+                    st.text(f"UPC: {row.get('BARCODE', 'N/A')}")
+                    st.text(f"Brand ID: {row.get('BRAND_ID', 'N/A')}")
+                    st.text(f"Original Brand: {row.get('BRAND', 'N/A')}")
+                    st.text(f"Category: {row.get('CATEGORY', 'N/A')}")
+                    st.text(f"Description: {row.get('DESCRIPTION', 'N/A')}")
                     
-                    # Review form
-                    new_status = st.selectbox(f"Status for record {idx + 1}", 
-                                            ["Approved", "Rejected", "Needs More Info"],
-                                            key=f"status_{idx}")
-                    comments = st.text_area("Comments", key=f"comments_{idx}")
+                    # Edit fields
+                    df.at[idx, 'updated_description'] = st.text_area(
+                        "📝 Updated Description", 
+                        value=row.get('updated_description', row.get('DESCRIPTION', '')),
+                        key=f"desc_{idx}"
+                    )
+                    df.at[idx, 'updated_category'] = st.text_input(
+                        "📦 Updated Category",
+                        value=row.get('updated_category', row.get('CATEGORY', '')),
+                        key=f"cat_{idx}"
+                    )
+                    df.at[idx, 'updated_brand'] = st.text_input(
+                        "🏷️ Updated Brand",
+                        value=row.get('updated_brand', row.get('BRAND', '')),
+                        key=f"brand_{idx}"
+                    )
+                    df.at[idx, 'no_change'] = st.checkbox(
+                        "✅ No Change Required",
+                        value=row.get('no_change', False),
+                        key=f"nochange_{idx}"
+                    )
+                    df.at[idx, 'comments'] = st.text_input(
+                        "🗒️ Comments",
+                        value=row.get('comments', ''),
+                        key=f"comment_{idx}"
+                    )
                     
                     if st.button("Submit Review", key=f"submit_{idx}"):
-                        df.at[idx, 'status'] = new_status
+                        df.at[idx, 'status'] = 'Reviewed'
                         df.at[idx, 'reviewer'] = st.session_state.current_user['name']
                         df.at[idx, 'review_date'] = datetime.now().strftime("%Y-%m-%d")
-                        df.at[idx, 'comments'] = comments
                         st.session_state.uploaded_files[selected_file] = df
-                        st.success("Review submitted successfully")
+                        st.success("✅ Review submitted successfully")
                         st.rerun()
         else:
             st.success("All records in this file have been reviewed!")
+
+def show_queue_page(queue_type):
+    show_back_button()
+    st.header(f"{queue_type.title()} Projects")
+    
+    # Add tabs for different views
+    tab1, tab2 = st.tabs(["Review Projects", "Upload New Project"])
+    
+    with tab1:
+        show_reviewer_page(queue_type)
+    
+    with tab2:
+        if st.session_state.current_user['role'] == "Admin":
+            st.subheader("Upload New Project")
+            uploaded_file = st.file_uploader(
+                "Upload CSV File:", 
+                type="csv",
+                key=f"upload_{queue_type}"  # Unique key for each queue
+            )
+            
+            if st.button("Upload Project", key=f"upload_button_{queue_type}"):
+                if uploaded_file is not None:
+                    if handle_file_upload(uploaded_file, queue_type):
+                        st.success(f"File uploaded successfully to {queue_type} queue")
+                else:
+                    st.error("Please select a file to upload")
+        else:
+            st.warning("Only administrators can upload new projects")
 
 # Main page routing logic
 current_page = get_current_page()
@@ -171,7 +243,6 @@ if st.session_state.current_user:
     elif current_page == 'main':
         show_main_page()
     elif current_page in ['nonlicensed', 'licensed', 'catq']:
-        show_back_button()
-        st.header(f"{current_page.title()} Projects")
+        show_queue_page(current_page)
 else:
     show_login_panel()
