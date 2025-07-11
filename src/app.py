@@ -116,7 +116,7 @@ def show_main_page():
     st.markdown("""
         <style>
         /* Main menu card buttons */
-        [data-testid="element-container"] > div > div > div > .stButton > button {
+        [data-testid="element-container"] .stButton > button:not([kind="secondary"]) {
             background-color: #1e3d59 !important;
             border-radius: 15px !important;
             padding: 2rem 1.5rem !important;
@@ -137,18 +137,20 @@ def show_main_page():
             background-image: linear-gradient(145deg, #1e3d59 0%, #2a527a 100%) !important;
         }
         
-        [data-testid="element-container"] > div > div > div > .stButton > button:hover {
+        [data-testid="element-container"] .stButton > button:not([kind="secondary"]):hover {
             transform: translateY(-5px) !important;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
             background-image: linear-gradient(145deg, #2a527a 0%, #1e3d59 100%) !important;
         }
         
-        /* Card accents */
-        [data-testid="element-container"] button[kind="secondary"] {
+        /* Back button specific style */
+        [data-testid="stButton"] button[kind="secondary"] {
             background-color: #f0f2f6 !important;
             color: #1e3d59 !important;
             height: auto !important;
             background-image: none !important;
+            width: auto !important;
+            padding: 0.5rem 1rem !important;
         }
         
         /* Upload button style */
