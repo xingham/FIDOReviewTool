@@ -1362,6 +1362,13 @@ def show_project_selection_page(queue_type):
         project_name = parts[1]
         priority = parts[2] if len(parts) > 3 else 'medium'
         
+        # Extract date from file key  
+        date_str = parts[-1][:8] if len(parts[-1]) >= 8 else "00000000"
+        try:
+            formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+        except (ValueError, IndexError):
+            formatted_date = "Unknown"
+        
         if project_name not in projects:
             projects[project_name] = {
                 'files': [],
@@ -1369,7 +1376,8 @@ def show_project_selection_page(queue_type):
                 'total': 0,
                 'reviewed': 0,
                 'gmv': 0,
-                'uploader': df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown"
+                'uploader': df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown",
+                'date': formatted_date
             }
         
         projects[project_name]['files'].append((k, df))
@@ -1389,21 +1397,21 @@ def show_project_selection_page(queue_type):
             st.markdown(f"""
                 <div class="modern-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h4 style="margin: 0; color: var(--text-primary); font-weight: 600;">{proj['project_name']}</h4>
+                        <h4 style="margin: 0; color: var(--text-primary); font-weight: 600;">{project_name}</h4>
                         <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">
-                            {priority_map.get(str(proj['priority']).lower(), proj['priority'])}
+                            {data['priority'].title()}
                         </span>
                     </div>
                     <div style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">
-                        <p style="margin: 0.25rem 0;"><strong>Queue:</strong> {proj['queue_type'].title()}</p>
-                        <p style="margin: 0.25rem 0;"><strong>Upload Date:</strong> {proj['date']}</p>
-                        <p style="margin: 0.25rem 0;"><strong>Uploader:</strong> {proj['uploader']}</p>
-                        <p style="margin: 0.25rem 0;"><strong>GMV:</strong> ${proj['gmv']:,.2f}</p>
-                        <p style="margin: 0.25rem 0;"><strong>Progress:</strong> {proj['reviewed']}/{proj['total']} ({proj['progress']:.1f}%)</p>
+                        <p style="margin: 0.25rem 0;"><strong>Queue:</strong> {queue_type.title()}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Upload Date:</strong> {data['date']}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Uploader:</strong> {data['uploader']}</p>
+                        <p style="margin: 0.25rem 0;"><strong>GMV:</strong> ${data['gmv']:,.2f}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Progress:</strong> {data['reviewed']}/{data['total']} ({progress:.1f}%)</p>
                     </div>
                     <div style="margin-top: 1rem; margin-bottom: 1rem;">
                         <div style="background-color: #e5e7eb; border-radius: 10px; height: 12px; border: 1px solid #d1d5db; overflow: hidden;">
-                            <div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 100%; width: {proj['progress']}%; border-radius: 10px; transition: width 0.3s ease;"></div>
+                            <div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 100%; width: {progress}%; border-radius: 10px; transition: width 0.3s ease;"></div>
                         </div>
                     </div>
                 </div>
@@ -1412,46 +1420,59 @@ def show_project_selection_page(queue_type):
             # Action buttons inside the card area (but outside the HTML since Streamlit buttons need to be separate)
             col_action1, col_action2 = st.columns(2)
             with col_action1:
-                if st.button(f"🔍 Review Project", key=f"review_btn_{proj['file_key']}", use_container_width=True):
-                    st.session_state.selected_project = proj['file_key']
-                    navigate_to(f"{proj['queue_type']}_review")
+                if st.button("🔍 Review", key=f"review_{project_name}", use_container_width=True):
+                    st.session_state.selected_project = data['files'][0][0]  # First file key
+                    navigate_to(f"{queue_type}_review")
             
-            # Admin delete functionality from overview
+            with col_action2:
+                # Download option
+                first_file = data['files'][0][1]
+                csv = first_file.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    "📥 Download",
+                    data=csv,
+                    file_name=f"{project_name}.csv",
+                    mime="text/csv",
+                    key=f"download_{project_name}",
+                    use_container_width=True
+                )
+            
+            # Admin delete button (also inside the card)
             if st.session_state.current_user['role'] == "Admin":
-                with col_action2:
-                    if st.button(f"🗑️ Delete", key=f"overview_delete_{proj['file_key']}", type="secondary", use_container_width=True):
-                        # Show confirmation
-                        if f"overview_confirm_delete_{proj['file_key']}" not in st.session_state:
-                            st.session_state[f"overview_confirm_delete_{proj['file_key']}"] = True
-                            st.warning(f"⚠️ Delete '{proj['project_name']}'?")
-                            st.rerun()
+                if st.button("🗑️ Delete Project", key=f"delete_{project_name}", type="secondary", use_container_width=True):
+                    # Show confirmation
+                    if f"confirm_delete_{project_name}" not in st.session_state:
+                        st.session_state[f"confirm_delete_{project_name}"] = True
+                        st.warning(f"⚠️ Are you sure you want to delete '{project_name}'? This action cannot be undone!")
+                        st.rerun()
             
-            # Handle confirmation for overview delete
-            if st.session_state.get(f"overview_confirm_delete_{proj['file_key']}", False):
+            # Handle confirmation for project delete
+            if st.session_state.get(f"confirm_delete_{project_name}", False):
                 col_confirm1, col_confirm2 = st.columns([1, 1])
                 with col_confirm1:
-                    if st.button("❌ Cancel", key=f"overview_cancel_{proj['file_key']}", use_container_width=True):
-                        del st.session_state[f"overview_confirm_delete_{proj['file_key']}"]
+                    if st.button("❌ Cancel", key=f"cancel_{project_name}", use_container_width=True):
+                        del st.session_state[f"confirm_delete_{project_name}"]
                         st.rerun()
                 with col_confirm2:
-                    if st.button("✅ Delete", key=f"overview_confirm_btn_{proj['file_key']}", type="primary", use_container_width=True):
-                            # Delete the file
-                            if proj['file_key'] in st.session_state.uploaded_files:
-                                del st.session_state.uploaded_files[proj['file_key']]
-                            
-                            # Save the updated state
-                            save_session_state()
-                            
-                            # Refresh to ensure immediate visibility across users
-                            refresh_session_state()
-                            
-                            # Clean up confirmation state
-                            if f"overview_confirm_delete_{proj['file_key']}" in st.session_state:
-                                del st.session_state[f"overview_confirm_delete_{proj['file_key']}"]
-                            
-                            st.success(f"✅ Project '{proj['project_name']}' deleted!")
-                            time.sleep(1)
-                            st.rerun()
+                    if st.button("✅ Delete", key=f"confirm_btn_{project_name}", type="primary", use_container_width=True):
+                        # Delete all files for this project
+                        for file_key, _ in data['files']:
+                            if file_key in st.session_state.uploaded_files:
+                                del st.session_state.uploaded_files[file_key]
+                        
+                        # Save the updated state
+                        save_session_state()
+                        
+                        # Refresh to ensure immediate visibility across users
+                        refresh_session_state()
+                        
+                        # Clean up confirmation state
+                        if f"confirm_delete_{project_name}" in st.session_state:
+                            del st.session_state[f"confirm_delete_{project_name}"]
+                        
+                        st.success(f"✅ Project '{project_name}' deleted!")
+                        time.sleep(1)
+                        st.rerun()
 
 def handle_file_upload(uploaded_file, queue_type, project_title, priority="medium"):
     if uploaded_file is not None:
