@@ -2420,11 +2420,6 @@ def show_reviewer_page(queue_type):
         # Review form for pending items OR editing reviewed items
         if row['status'] == 'Pending Review' or row['status'] == 'Reviewed':
             with st.container():
-                if row['status'] == 'Reviewed':
-                    st.markdown("### ✏️ Edit Review")
-                else:
-                    st.markdown("### 📝 Submit Review")
-                    
                 st.markdown('<div class="review-actions">', unsafe_allow_html=True)
                 
                 col1, col2 = st.columns(2)
