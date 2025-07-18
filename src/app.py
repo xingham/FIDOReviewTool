@@ -294,9 +294,17 @@ st.markdown("""
     }
     
     /* Progress bars */
+    .stProgress > div > div {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        border-radius: 10px !important;
+        height: 12px !important;
+        margin: 0.5rem 0 !important;
+    }
+    
     .stProgress > div > div > div {
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        border-radius: 10px;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+        border-radius: 10px !important;
+        height: 12px !important;
     }
     
     /* Navigation */
@@ -715,13 +723,10 @@ def get_gmv_sum(df):
             # Convert to numeric, replacing non-numeric values with 0
             numeric_series = pd.to_numeric(df[gmv_col], errors='coerce').fillna(0)
             total = float(numeric_series.sum())
-            st.info(f"💰 **GMV Total from '{gmv_col}':** ${total:,.2f}")
             return total
         except Exception as e:
             st.error(f"❌ Error calculating GMV sum: {e}")
             return 0.0
-    else:
-        st.warning("⚠️ No GMV column detected - using 0.0 for calculations")
     return 0.0
 
 # Function to get GMV value from a row
