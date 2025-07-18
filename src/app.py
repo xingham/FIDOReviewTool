@@ -670,7 +670,7 @@ def get_gmv_sum(df):
 # Function to get GMV value from a row
 def get_gmv_value(row, df_columns=None):
     """Get GMV value from a row, checking for any GMV-related column"""
-    if df_columns:
+    if df_columns is not None and len(df_columns) > 0:
         gmv_col = None
         for col in df_columns:
             if 'gmv' in str(col).lower():
@@ -685,14 +685,15 @@ def get_gmv_value(row, df_columns=None):
                 return 0.0
     
     # Fallback: check the row itself for GMV-related keys
-    for key in row.index if hasattr(row, 'index') else []:
-        if 'gmv' in str(key).lower():
-            try:
-                value = pd.to_numeric(row.get(key, 0), errors='coerce')
-                return float(value) if pd.notna(value) else 0.0
-            except Exception as e:
-                print(f"Error getting GMV value from key {key}: {e}")
-                return 0.0
+    if hasattr(row, 'index'):
+        for key in row.index:
+            if 'gmv' in str(key).lower():
+                try:
+                    value = pd.to_numeric(row.get(key, 0), errors='coerce')
+                    return float(value) if pd.notna(value) else 0.0
+                except Exception as e:
+                    print(f"Error getting GMV value from key {key}: {e}")
+                    return 0.0
     return 0.0
 
 # Initialize session state
@@ -1477,7 +1478,7 @@ def show_reviewer_page(queue_type):
                         <div class="fido-field"><strong>UPC:</strong><span>{row.get('BARCODE', 'N/A')}</span></div>
                         <div class="fido-field"><strong>Brand ID:</strong><span>{row.get('BRAND_ID', 'N/A')}</span></div>
                         <div class="fido-field"><strong>Original Brand:</strong><span>{row.get('BRAND', 'N/A')}</span></div>
-                        <div class="fido-field"><strong>GMV:</strong><span>${get_gmv_value(row, filtered_df.columns):,.2f}</span></div>
+                        <div class="fido-field"><strong>GMV:</strong><span>${get_gmv_value(row, list(filtered_df.columns)):,.2f}</span></div>
                     </div>
                     <div>
                         <div class="fido-field"><strong>Category:</strong><span>{row.get('CATEGORY', 'N/A')}</span></div>
