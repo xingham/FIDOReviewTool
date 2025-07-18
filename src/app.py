@@ -426,18 +426,29 @@ st.markdown("""
     }
     
     .status-pending {
-        background: #fbbf24;
-        color: #1f2937;
-        border: 1px solid #f59e0b;
-        font-weight: 600;
-        box-shadow: 0 2px 4px rgba(251, 191, 36, 0.3);
+        background: #ff6b35 !important;
+        color: #ffffff !important;
+        border: 2px solid #e55a2b !important;
+        font-weight: 700 !important;
+        box-shadow: 0 3px 8px rgba(255, 107, 53, 0.4) !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+        padding: 0.4rem 0.8rem !important;
+        border-radius: 25px !important;
+        font-size: 0.85rem !important;
+        letter-spacing: 0.5px !important;
     }
     
     .status-reviewed {
-        background: #d1fae5;
-        color: #065f46;
-        border: 1px solid #10b981;
-        font-weight: 600;
+        background: #22c55e !important;
+        color: #ffffff !important;
+        border: 2px solid #16a34a !important;
+        font-weight: 700 !important;
+        box-shadow: 0 3px 8px rgba(34, 197, 94, 0.4) !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+        padding: 0.4rem 0.8rem !important;
+        border-radius: 25px !important;
+        font-size: 0.85rem !important;
+        letter-spacing: 0.5px !important;
     }
     
     .fido-content {
