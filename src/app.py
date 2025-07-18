@@ -1530,7 +1530,7 @@ def show_project_selection_page(queue_type):
         status_info = ""
         if data.get('claimed_by'):
             claimed_date = data.get('claimed_date', 'Unknown')
-            status_info = f"<p style='margin: 0.25rem 0;'><strong>🎯 Claimed by:</strong> {data['claimed_by']} on {claimed_date}</p>"
+            status_info = f"<p style='margin: 0.25rem 0;'><strong>🎯 Reviewing:</strong> {data['claimed_by']} (claimed {claimed_date})</p>"
         else:
             status_info = "<p style='margin: 0.25rem 0;'><strong>📌 Status:</strong> Available for review</p>"
         
@@ -1560,50 +1560,24 @@ def show_project_selection_page(queue_type):
             """, unsafe_allow_html=True)
             
             # Action buttons inside the card area (but outside the HTML since Streamlit buttons need to be separate)
-            col_action1, col_action2, col_action3 = st.columns(3)
+            col_action1, col_action2 = st.columns(2)
             
-            # Claim/Unclaim button
             with col_action1:
-                if data.get('claimed_by'):
-                    # If claimed by current user, show unclaim option
-                    if data.get('claimed_by') == st.session_state.current_user['name']:
-                        if st.button("🔓 Unclaim", key=f"unclaim_{project_name}", use_container_width=True):
-                            # Unclaim the project
-                            for file_key, df in data['files']:
-                                df['claimed_by'] = ''
-                                df['claimed_date'] = ''
-                                df['project_status'] = 'Available'
-                                st.session_state.uploaded_files[file_key] = df
-                            save_session_state()
-                            refresh_session_state()
-                            st.success(f"✅ Project '{project_name}' unclaimed!")
-                            time.sleep(1)
-                            st.rerun()
-                    else:
-                        # Claimed by someone else
-                        st.button(f"🔒 Claimed", key=f"claimed_{project_name}", disabled=True, use_container_width=True)
-                else:
-                    # Available to claim
-                    if st.button("🎯 Claim", key=f"claim_{project_name}", type="primary", use_container_width=True):
-                        # Claim the project
-                        current_date = datetime.now().strftime("%Y-%m-%d")
-                        for file_key, df in data['files']:
-                            df['claimed_by'] = st.session_state.current_user['name']
-                            df['claimed_date'] = current_date
-                            df['project_status'] = 'Claimed'
-                            st.session_state.uploaded_files[file_key] = df
-                        save_session_state()
-                        refresh_session_state()
-                        st.success(f"✅ Project '{project_name}' claimed!")
-                        time.sleep(1)
-                        st.rerun()
-            
-            with col_action2:
-                if st.button("🔍 Review", key=f"review_{project_name}", use_container_width=True):
+                if st.button("� Review", key=f"review_{project_name}", use_container_width=True):
+                    # Automatically claim the project when reviewing
+                    current_date = datetime.now().strftime("%Y-%m-%d")
+                    for file_key, df in data['files']:
+                        df['claimed_by'] = st.session_state.current_user['name']
+                        df['claimed_date'] = current_date
+                        df['project_status'] = 'Claimed'
+                        st.session_state.uploaded_files[file_key] = df
+                    save_session_state()
+                    refresh_session_state()
+                    
                     st.session_state.selected_project = data['files'][0][0]  # First file key
                     navigate_to(f"{queue_type}_review")
             
-            with col_action3:
+            with col_action2:
                 # Download option
                 first_file = data['files'][0][1]
                 csv = first_file.to_csv(index=False).encode('utf-8')
