@@ -153,6 +153,7 @@ st.markdown("""
         color: white;
         margin-bottom: 1.5rem;
         transition: all 0.3s ease;
+        cursor: pointer;
     }
     
     .project-card:hover {
@@ -372,6 +373,104 @@ st.markdown("""
         color: white;
     }
     
+    /* FIDO Card Styles */
+    .fido-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .fido-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        background: var(--card-hover-bg);
+    }
+    
+    .fido-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .fido-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    
+    .fido-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    
+    .status-reviewed {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .fido-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .fido-field {
+        margin-bottom: 0.5rem;
+    }
+    
+    .fido-field strong {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+    
+    .fido-field span {
+        color: var(--text-secondary);
+        margin-left: 0.5rem;
+    }
+    
+    .share-link {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .share-link:hover {
+        background: var(--card-hover-bg);
+        color: var(--text-primary);
+    }
+    
+    .review-actions {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+    
     /* Mobile responsiveness */
     @media (max-width: 768px) {
         .main > div {
@@ -415,6 +514,71 @@ st.markdown("""
         }
     }
     
+    // Handle navigation from clickable cards
+    window.addEventListener('message', function(event) {
+        if (event.data.type === 'navigate') {
+            // Map page names to button keys
+            const buttonMap = {
+                'nonlicensed': 'nav_nonlicensed',
+                'licensed': 'nav_licensed', 
+                'catq': 'nav_catq'
+            };
+            
+            const targetButton = buttonMap[event.data.page];
+            if (targetButton) {
+                // Find button by data-testid or key
+                const buttons = document.querySelectorAll('button');
+                buttons.forEach(button => {
+                    const testId = button.getAttribute('data-testid');
+                    if (testId && testId.includes(targetButton)) {
+                        button.click();
+                        return;
+                    }
+                });
+            }
+        }
+    });
+    
+    // Alternative: direct navigation using Streamlit's JavaScript API
+    function navigateToPage(page) {
+        const buttonMap = {
+            'nonlicensed': 'nav_nonlicensed',
+            'licensed': 'nav_licensed', 
+            'catq': 'nav_catq'
+        };
+        
+        const targetButton = buttonMap[page];
+        if (targetButton) {
+            // Try to find and click the button
+            setTimeout(() => {
+                const buttons = document.querySelectorAll('button');
+                buttons.forEach(button => {
+                    const testId = button.getAttribute('data-testid');
+                    if (testId && testId.includes(targetButton)) {
+                        button.click();
+                    }
+                });
+            }, 100);
+        }
+    }
+    
+    // Auto-scroll to FIDO if URL parameter is present
+    function autoScrollToFido() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const fidoId = urlParams.get('fido');
+        if (fidoId) {
+            setTimeout(() => {
+                const fidoElement = document.getElementById(`fido-${fidoId}`);
+                if (fidoElement) {
+                    fidoElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    fidoElement.style.border = '3px solid #667eea';
+                    fidoElement.style.borderRadius = '12px';
+                    fidoElement.style.backgroundColor = 'rgba(102, 126, 234, 0.1)';
+                }
+            }, 1000);
+        }
+    }
+    
     // Initialize theme on page load
     document.addEventListener('DOMContentLoaded', function() {
         const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -430,6 +594,9 @@ st.markdown("""
             icon.textContent = '🌙';
             text.textContent = 'Dark';
         }
+        
+        // Auto-scroll to FIDO
+        autoScrollToFido();
     });
     
     // Apply theme immediately to prevent flash
@@ -487,6 +654,13 @@ if 'selected_project' not in st.session_state:
     st.session_state.selected_project = None
 if 'current_queue' not in st.session_state:
     st.session_state.current_queue = None
+
+# Handle URL parameters for navigation and deep linking
+query_params = st.experimental_get_query_params()
+if 'fido' in query_params:
+    st.session_state.highlighted_fido = query_params['fido'][0]
+elif 'highlighted_fido' not in st.session_state:
+    st.session_state.highlighted_fido = None
 
 def navigate_to(page):
     """Handle navigation between pages"""
@@ -554,36 +728,53 @@ def show_main_page():
     
     with col1:
         st.markdown("""
-            <div class="project-card">
+            <div class="project-card" onclick="navigateToPage('nonlicensed')">
                 <div class="project-title">📋 Non-Licensed</div>
                 <div class="project-info">Review non-licensed FIDO items</div>
-                <div class="project-info">Click button below to start reviewing</div>
+                <div class="project-info">Click to start reviewing</div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button("Enter", key="nonlicensed_btn", use_container_width=True):
-            navigate_to('nonlicensed')
     
     with col2:
         st.markdown("""
-            <div class="project-card">
+            <div class="project-card" onclick="navigateToPage('licensed')">
                 <div class="project-title">📜 Licensed</div>
                 <div class="project-info">Review licensed FIDO items</div>
-                <div class="project-info">Click button below to start reviewing</div>
+                <div class="project-info">Click to start reviewing</div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button("Enter", key="licensed_btn", use_container_width=True):
-            navigate_to('licensed')
     
     with col3:
         st.markdown("""
-            <div class="project-card">
+            <div class="project-card" onclick="navigateToPage('catq')">
                 <div class="project-title">🔍 CATQ</div>
                 <div class="project-info">Category Quality Review</div>
-                <div class="project-info">Click button below to start reviewing</div>
+                <div class="project-info">Click to start reviewing</div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button("Enter", key="catq_btn", use_container_width=True):
+    
+    # Hidden navigation buttons that can be triggered by JavaScript
+    col_hidden1, col_hidden2, col_hidden3 = st.columns(3)
+    with col_hidden1:
+        if st.button("Navigate to Non-Licensed", key="nav_nonlicensed", type="primary"):
+            navigate_to('nonlicensed')
+    with col_hidden2:
+        if st.button("Navigate to Licensed", key="nav_licensed", type="primary"):
+            navigate_to('licensed')
+    with col_hidden3:
+        if st.button("Navigate to CATQ", key="nav_catq", type="primary"):
             navigate_to('catq')
+    
+    # Hide the navigation buttons with CSS
+    st.markdown("""
+        <style>
+        button[data-testid*="nav_nonlicensed"],
+        button[data-testid*="nav_licensed"],
+        button[data-testid*="nav_catq"] {
+            display: none !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
     
     # Admin section
     if st.session_state.current_user['role'] == "Admin":
@@ -1072,7 +1263,7 @@ def show_project_selection_page(queue_type):
                             time.sleep(1)
                             st.rerun()
 
-# Simplified reviewer interface
+# Enhanced reviewer interface showing all FIDOs
 def show_reviewer_page(queue_type):
     if not st.session_state.selected_project:
         show_project_selection_page(queue_type)
@@ -1092,87 +1283,193 @@ def show_reviewer_page(queue_type):
     reviewed = len(df[df['status'] == 'Reviewed'])
     total = len(df)
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("Total Records", total)
     with col2:
         st.metric("Reviewed", reviewed)
     with col3:
         st.metric("Remaining", len(pending))
+    with col4:
+        st.metric("Progress", f"{(reviewed / total * 100):.1f}%" if total > 0 else "0%")
     
     st.progress(reviewed / total if total > 0 else 0)
     
-    if not pending.empty:
-        # Show first pending record
-        idx = pending.index[0]
-        row = pending.iloc[0]
-        
-        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
-        st.subheader(f"📝 FIDO: {row.get('FIDO', f'Record {idx + 1}')}")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"**UPC:** {row.get('BARCODE', 'N/A')}")
-            st.markdown(f"**Brand ID:** {row.get('BRAND_ID', 'N/A')}")
-            st.markdown(f"**Original Brand:** {row.get('BRAND', 'N/A')}")
-        with col2:
-            st.markdown(f"**Category:** {row.get('CATEGORY', 'N/A')}")
-            st.markdown(f"**Description:** {row.get('DESCRIPTION', 'N/A')}")
-        
-        # Edit fields
-        updated_desc = st.text_area(
-            "📝 Updated Description",
-            value=row.get('DESCRIPTION', ''),
-            key=f"desc_{idx}"
+    # Filter options
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        filter_status = st.selectbox(
+            "Filter by Status:",
+            ["All", "Pending Review", "Reviewed"],
+            key="status_filter"
         )
-        
-        updated_cat = st.text_input(
-            "📦 Updated Category",
-            value=row.get('CATEGORY', ''),
-            key=f"cat_{idx}"
+    with col2:
+        search_term = st.text_input(
+            "Search FIDOs:",
+            placeholder="Search by FIDO, UPC, Brand, Category, or Description",
+            key="search_filter"
         )
+    
+    # Apply filters
+    filtered_df = df.copy()
+    if filter_status != "All":
+        filtered_df = filtered_df[filtered_df['status'] == filter_status]
+    
+    if search_term:
+        search_columns = ['FIDO', 'BARCODE', 'BRAND', 'CATEGORY', 'DESCRIPTION']
+        mask = pd.Series([False] * len(filtered_df))
+        for col in search_columns:
+            if col in filtered_df.columns:
+                mask |= filtered_df[col].astype(str).str.contains(search_term, case=False, na=False)
+        filtered_df = filtered_df[mask]
+    
+    st.markdown(f"**Showing {len(filtered_df)} of {total} records**")
+    
+    if filtered_df.empty:
+        st.info("No records match your current filters.")
+        return
+    
+    # Show all FIDOs
+    for idx, (_, row) in enumerate(filtered_df.iterrows()):
+        fido_id = row.get('FIDO', f'record_{idx}')
+        status_class = 'status-reviewed' if row['status'] == 'Reviewed' else 'status-pending'
         
-        updated_brand = st.text_input(
-            "🏷️ Updated Brand",
-            value=row.get('BRAND', ''),
-            key=f"brand_{idx}"
-        )
+        # Create shareable link
+        current_url = st.experimental_get_query_params()
+        share_url = f"?fido={fido_id}"
         
-        no_change = st.checkbox("✅ No Change Required", key=f"nochange_{idx}")
-        comments = st.text_input("💬 Comments", key=f"comment_{idx}")
+        st.markdown(f"""
+            <div class="fido-card" id="fido-{fido_id}">
+                <div class="fido-header">
+                    <h4 class="fido-title">📝 FIDO: {fido_id}</h4>
+                    <div class="share-link" onclick="navigator.clipboard.writeText(window.location.origin + window.location.pathname + '{share_url}'); alert('Link copied to clipboard!')">
+                        🔗 Share
+                    </div>
+                </div>
+                <div class="fido-content">
+                    <div>
+                        <div class="fido-field"><strong>UPC:</strong><span>{row.get('BARCODE', 'N/A')}</span></div>
+                        <div class="fido-field"><strong>Brand ID:</strong><span>{row.get('BRAND_ID', 'N/A')}</span></div>
+                        <div class="fido-field"><strong>Original Brand:</strong><span>{row.get('BRAND', 'N/A')}</span></div>
+                        <div class="fido-field"><strong>GMV:</strong><span>${row.get('GMV', 0):,.2f}</span></div>
+                    </div>
+                    <div>
+                        <div class="fido-field"><strong>Category:</strong><span>{row.get('CATEGORY', 'N/A')}</span></div>
+                        <div class="fido-field"><strong>Description:</strong><span>{row.get('DESCRIPTION', 'N/A')}</span></div>
+                        <div class="fido-field"><strong>Status:</strong><span class="fido-status {status_class}">{row['status']}</span></div>
+                        {f'<div class="fido-field"><strong>Reviewer:</strong><span>{row.get("reviewer", "")}</span></div>' if row.get('reviewer') else ''}
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
         
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("✅ Submit Review", type="primary", use_container_width=True):
-                df.at[idx, 'updated_description'] = updated_desc
-                df.at[idx, 'updated_category'] = updated_cat
-                df.at[idx, 'updated_brand'] = updated_brand
-                df.at[idx, 'no_change'] = no_change
-                df.at[idx, 'comments'] = comments
-                df.at[idx, 'status'] = 'Reviewed'
-                df.at[idx, 'reviewer'] = st.session_state.current_user['name']
-                df.at[idx, 'review_date'] = datetime.now().strftime("%Y-%m-%d")
+        # Review form for pending items
+        if row['status'] == 'Pending Review':
+            with st.container():
+                st.markdown('<div class="review-actions">', unsafe_allow_html=True)
                 
-                st.session_state.uploaded_files[file_key] = df
-                save_session_state()
-                st.success("✅ Review submitted!")
-                time.sleep(1)
-                st.rerun()
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    updated_desc = st.text_area(
+                        "📝 Updated Description",
+                        value=row.get('DESCRIPTION', ''),
+                        key=f"desc_{idx}_{fido_id}",
+                        height=100
+                    )
+                    
+                    updated_cat = st.text_input(
+                        "📦 Updated Category",
+                        value=row.get('CATEGORY', ''),
+                        key=f"cat_{idx}_{fido_id}"
+                    )
+                
+                with col2:
+                    updated_brand = st.text_input(
+                        "🏷️ Updated Brand",
+                        value=row.get('BRAND', ''),
+                        key=f"brand_{idx}_{fido_id}"
+                    )
+                    
+                    comments = st.text_input(
+                        "💬 Comments",
+                        key=f"comment_{idx}_{fido_id}"
+                    )
+                
+                col_check, col_submit = st.columns([1, 1])
+                with col_check:
+                    no_change = st.checkbox(
+                        "✅ No Change Required", 
+                        key=f"nochange_{idx}_{fido_id}"
+                    )
+                
+                with col_submit:
+                    if st.button(
+                        "✅ Submit Review", 
+                        type="primary", 
+                        key=f"submit_{idx}_{fido_id}",
+                        use_container_width=True
+                    ):
+                        # Update the dataframe
+                        row_index = df.index[df.get('FIDO', df.index) == fido_id].tolist()
+                        if not row_index:
+                            row_index = [df.index[idx]]
+                        
+                        actual_idx = row_index[0]
+                        df.at[actual_idx, 'updated_description'] = updated_desc
+                        df.at[actual_idx, 'updated_category'] = updated_cat
+                        df.at[actual_idx, 'updated_brand'] = updated_brand
+                        df.at[actual_idx, 'no_change'] = no_change
+                        df.at[actual_idx, 'comments'] = comments
+                        df.at[actual_idx, 'status'] = 'Reviewed'
+                        df.at[actual_idx, 'reviewer'] = st.session_state.current_user['name']
+                        df.at[actual_idx, 'review_date'] = datetime.now().strftime("%Y-%m-%d")
+                        
+                        st.session_state.uploaded_files[file_key] = df
+                        save_session_state()
+                        st.success(f"✅ Review submitted for FIDO {fido_id}!")
+                        time.sleep(1)
+                        st.rerun()
+                
+                st.markdown('</div>', unsafe_allow_html=True)
         
-        with col2:
-            if st.button("⏭️ Skip for Now", use_container_width=True):
-                st.info("Record skipped")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    else:
-        st.success("🎉 All records have been reviewed!")
-        if st.button("📥 Download Results", type="primary"):
+        # Show review details for completed items
+        elif row['status'] == 'Reviewed':
+            with st.expander(f"📋 Review Details for FIDO {fido_id}"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown(f"**Updated Description:** {row.get('updated_description', 'N/A')}")
+                    st.markdown(f"**Updated Category:** {row.get('updated_category', 'N/A')}")
+                with col2:
+                    st.markdown(f"**Updated Brand:** {row.get('updated_brand', 'N/A')}")
+                    st.markdown(f"**Comments:** {row.get('comments', 'N/A')}")
+                st.markdown(f"**No Change Required:** {'Yes' if row.get('no_change') else 'No'}")
+                st.markdown(f"**Reviewed by:** {row.get('reviewer', 'N/A')} on {row.get('review_date', 'N/A')}")
+    
+    # Download section
+    st.markdown("---")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("📥 Download All Results", type="primary", use_container_width=True):
             csv = df.to_csv(index=False).encode('utf-8')
             st.download_button(
-                "Download Reviewed Data",
+                "Download Complete Dataset",
                 data=csv,
+                file_name=f"Complete_{project_name}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+    
+    with col2:
+        if reviewed > 0:
+            reviewed_df = df[df['status'] == 'Reviewed']
+            csv_reviewed = reviewed_df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                "📥 Download Reviewed Only",
+                data=csv_reviewed,
                 file_name=f"Reviewed_{project_name}.csv",
-                mime="text/csv"
+                mime="text/csv",
+                use_container_width=True
             )
 
 # Main routing
