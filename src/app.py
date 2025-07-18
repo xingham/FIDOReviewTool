@@ -648,9 +648,15 @@ def find_gmv_column(df):
     if df is None or df.empty:
         return None
     
+    # Debug: Print all columns for troubleshooting
+    st.write(f"🔍 **Debug - Available columns:** {list(df.columns)}")
+    
     for col in df.columns:
         if 'gmv' in str(col).lower():
+            st.success(f"✅ **Found GMV column:** '{col}'")
             return col
+    
+    st.warning("⚠️ **No GMV column found.** Looking for columns containing 'GMV' (case insensitive)")
     return None
 
 # Function to get GMV sum from a dataframe
@@ -661,10 +667,14 @@ def get_gmv_sum(df):
         try:
             # Convert to numeric, replacing non-numeric values with 0
             numeric_series = pd.to_numeric(df[gmv_col], errors='coerce').fillna(0)
-            return float(numeric_series.sum())
+            total = float(numeric_series.sum())
+            st.info(f"💰 **GMV Total from '{gmv_col}':** ${total:,.2f}")
+            return total
         except Exception as e:
-            print(f"Error calculating GMV sum: {e}")
+            st.error(f"❌ Error calculating GMV sum: {e}")
             return 0.0
+    else:
+        st.warning("⚠️ No GMV column detected - using 0.0 for calculations")
     return 0.0
 
 # Function to get GMV value from a row
@@ -681,7 +691,8 @@ def get_gmv_value(row, df_columns=None):
                 value = pd.to_numeric(row.get(gmv_col, 0), errors='coerce')
                 return float(value) if pd.notna(value) else 0.0
             except Exception as e:
-                print(f"Error getting GMV value: {e}")
+                # Use st.write instead of print for Streamlit visibility
+                st.error(f"❌ Error getting GMV value from '{gmv_col}': {e}")
                 return 0.0
     
     # Fallback: check the row itself for GMV-related keys
@@ -692,9 +703,32 @@ def get_gmv_value(row, df_columns=None):
                     value = pd.to_numeric(row.get(key, 0), errors='coerce')
                     return float(value) if pd.notna(value) else 0.0
                 except Exception as e:
-                    print(f"Error getting GMV value from key {key}: {e}")
+                    st.error(f"❌ Error getting GMV value from key '{key}': {e}")
                     return 0.0
     return 0.0
+
+# Debug function to check GMV detection
+def debug_gmv_detection(df, context=""):
+    """Debug function to show GMV detection results"""
+    with st.expander(f"🔧 GMV Debug Info {context}"):
+        st.write("**All DataFrame Columns:**")
+        for i, col in enumerate(df.columns):
+            contains_gmv = 'gmv' in str(col).lower()
+            st.write(f"{i+1}. `{col}` {'✅ (contains GMV)' if contains_gmv else ''}")
+        
+        gmv_col = find_gmv_column(df)
+        if gmv_col:
+            st.write(f"**Detected GMV Column:** `{gmv_col}`")
+            gmv_sum = get_gmv_sum(df)
+            st.write(f"**Total GMV:** ${gmv_sum:,.2f}")
+            
+            # Show sample values
+            st.write("**Sample GMV Values:**")
+            sample_values = df[gmv_col].head(5)
+            for idx, val in sample_values.items():
+                st.write(f"Row {idx}: {val}")
+        else:
+            st.write("**No GMV Column Detected**")
 
 # Initialize session state
 if 'uploaded_files' not in st.session_state or not isinstance(st.session_state.uploaded_files, dict):
@@ -887,6 +921,11 @@ def show_overview_page():
         priority = df['priority'].iloc[0] if 'priority' in df.columns else "medium"
         total_records = len(df)
         reviewed = len(df[df['status'] == 'Reviewed'])
+        
+        # Debug GMV detection for each project
+        if st.session_state.current_user['role'] == "Admin":
+            debug_gmv_detection(df, f"- {project_name}")
+        
         gmv = get_gmv_sum(df)
 
         all_projects.append({
@@ -1091,23 +1130,27 @@ def handle_file_upload(uploaded_file, queue_type, project_title, priority="mediu
             df['priority'] = priority
             
             # Handle GMV - ensure we have a standardized GMV column
+            st.subheader("🔍 GMV Column Detection")
             gmv_col = find_gmv_column(df)
             if gmv_col and gmv_col != 'GMV':
                 # Copy the GMV column to standardized name and keep original
                 try:
                     df['GMV'] = pd.to_numeric(df[gmv_col], errors='coerce').fillna(0)
+                    st.success(f"✅ Copied '{gmv_col}' to standardized 'GMV' column")
                 except Exception as e:
-                    print(f"Error processing GMV column {gmv_col}: {e}")
+                    st.error(f"❌ Error processing GMV column {gmv_col}: {e}")
                     df['GMV'] = 0.0
             elif not gmv_col:
                 # No GMV column found, create one with zeros
                 df['GMV'] = 0.0
+                st.warning("⚠️ No GMV column found - created 'GMV' column with zeros")
             else:
                 # GMV column exists, ensure it's numeric
                 try:
                     df['GMV'] = pd.to_numeric(df['GMV'], errors='coerce').fillna(0)
+                    st.success("✅ Existing 'GMV' column processed and validated")
                 except Exception as e:
-                    print(f"Error processing existing GMV column: {e}")
+                    st.error(f"❌ Error processing existing GMV column: {e}")
                     df['GMV'] = 0.0
 
             formatted_date = current_time.strftime('%Y%m%d_%H%M%S')
