@@ -29,10 +29,10 @@ st.markdown("""
     /* Main container */
     .main > div {
         padding: 2rem;
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        background: transparent;
+        border-radius: 0px;
+        backdrop-filter: none;
+        box-shadow: none;
         margin: 1rem;
     }
     
@@ -165,8 +165,8 @@ st.markdown("""
     .stSelectbox > label,
     .stTextArea > label,
     .stRadio > label {
-        font-size: 1.1rem !important;
-        font-weight: 600 !important;
+        font-size: 1.3rem !important;
+        font-weight: 700 !important;
         color: #2c3e50 !important;
         margin-bottom: 0.75rem !important;
     }
@@ -296,7 +296,7 @@ if 'uploaded_files' not in st.session_state:
     st.session_state.uploaded_files = load_session_state()
 
 # Set the title of the app
-st.title("🔍 FIDO Review Tool")
+st.title("� Welcome to FIDO Review Tool")
 
 # Initialize session state for user authentication and navigation
 if 'current_user' not in st.session_state:
