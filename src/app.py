@@ -1363,9 +1363,12 @@ def show_project_selection_page(queue_type):
         priority = parts[2] if len(parts) > 3 else 'medium'
         
         # Extract date from file key  
-        date_str = parts[-1][:8] if len(parts[-1]) >= 8 else "00000000"
+        date_str = parts[-1].split('_')[0] if '_' in parts[-1] and len(parts[-1].split('_')[0]) == 8 else "00000000"
         try:
-            formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+            if len(date_str) == 8 and date_str.isdigit():
+                formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+            else:
+                formatted_date = "Unknown"
         except (ValueError, IndexError):
             formatted_date = "Unknown"
         
