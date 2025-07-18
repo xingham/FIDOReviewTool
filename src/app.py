@@ -1560,6 +1560,202 @@ def show_upload_page():
         
         uploaded_file = st.file_uploader(
             "📄 Upload CSV File:",
+            type="csv",
+            help="Select a CSV file containing FIDO data"
+        )
+        
+        if uploaded_file:
+            st.success("✅ File loaded successfully!")
+            # Show file preview
+            try:
+                # Reset file pointer for preview
+                uploaded_file.seek(0)
+                
+                # Check if file has content
+                content = uploaded_file.read()
+                if not content or len(content.strip()) == 0:
+                    st.warning("⚠️ The uploaded file appears to be empty.")
+                else:
+                    # Reset file pointer for pandas
+                    uploaded_file.seek(0)
+                    
+                    # Try to preview the file
+                    try:
+                        preview_df = pd.read_csv(uploaded_file)
+                        if preview_df.empty:
+                            st.warning("⚠️ The CSV file contains no data rows.")
+                        elif len(preview_df.columns) == 0:
+                            st.warning("⚠️ The CSV file has no columns.")
+                        else:
+                            st.markdown("**File Preview:**")
+                            st.dataframe(preview_df.head(), use_container_width=True)
+                            st.info(f"📊 File contains {len(preview_df)} rows and {len(preview_df.columns)} columns")
+                    except pd.errors.EmptyDataError:
+                        st.warning("⚠️ The CSV file contains no data or has no columns.")
+                    except pd.errors.ParserError as pe:
+                        st.warning(f"⚠️ Error parsing CSV file: {str(pe)}")
+                        
+                # Reset file pointer for final upload
+                uploaded_file.seek(0)
+            except Exception as e:
+                st.warning(f"⚠️ Could not preview file: {str(e)}")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
+        st.subheader("⚙️ Settings")
+        
+        queue_type = st.selectbox(
+            "📋 Queue Type:",
+            ["Non-licensed", "Licensed", "CATQ"],
+            help="Select the appropriate queue for this project"
+        )
+        
+        priority = st.select_slider(
+            "🎯 Priority Level:",
+            options=["low", "medium", "high"],
+            value="medium",
+            format_func=lambda x: f"{'🟢' if x=='low' else '🟡' if x=='medium' else '🔴'} {x.title()} Priority"
+        )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Upload button
+        if st.button("🚀 Upload Project", type="primary", use_container_width=True):
+            if uploaded_file and project_title:
+                queue_mapping = {
+                    "Non-licensed": "nonlicensed",
+                    "Licensed": "licensed", 
+                    "CATQ": "catq"
+                }
+                
+                mapped_queue_type = queue_mapping[queue_type]
+                if handle_file_upload(uploaded_file, mapped_queue_type, project_title, priority):
+                    st.success(f"🎉 Project '{project_title}' uploaded successfully to {queue_type} queue!")
+                    time.sleep(2)
+                    st.rerun()
+            else:
+                st.error("❌ Please provide both project title and file")
+
+def show_analytics_page():
+    if st.session_state.current_user['role'] != "Admin":
+        st.error("🚫 Access denied. Admins only.")
+        return
+        
+    show_back_button('analytics')
+    st.header("📈 Analytics Dashboard")
+
+    # Refresh data to ensure we see latest changes from all users
+    refresh_session_state()
+    
+    # Add refresh button
+    if st.button("🔄 Refresh Data", help="Refresh to see latest analytics data"):
+        refresh_session_state()
+        st.rerun()
+
+    # Collect all project data for analytics
+    all_projects = []
+    detailed_analytics = []
+    
+    for file_key, df in st.session_state.uploaded_files.items():
+        parts = file_key.split('_')
+        if len(parts) < 2:
+            continue
+            
+        queue_type = parts[0]
+        project_name = parts[1]
+        uploader = df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown"
+        
+        # Basic project stats
+        total_records = len(df)
+        reviewed = len(df[df['status'] == 'Reviewed'])
+        gmv = get_gmv_sum(df)
+        
+        # Advanced FIDO Analytics for reviewed items only
+        reviewed_df = df[df['status'] == 'Reviewed']
+        total_reviewed = len(reviewed_df)
+        
+        if total_reviewed > 0:
+            # GMV calculations
+            beginning_gmv = get_gmv_sum(reviewed_df)  # Total GMV of reviewed FIDOs
+            
+            # Calculate various update counts
+            total_updated = 0
+            category_only_updated = 0
+            brand_only_updated = 0
+            both_updated = 0
+            no_updates = 0
+            description_updated = 0
+            
+            # GMV breakdowns
+            category_only_gmv = 0
+            brand_only_gmv = 0
+            both_updated_gmv = 0
+            no_updates_gmv = 0
+            
+            # Special movements
+            brand_id_null_moved = 0
+            false_positive_moved = 0
+            
+            for _, row in reviewed_df.iterrows():
+                row_gmv = get_gmv_value(row, list(reviewed_df.columns))
+                
+                # Check if category was updated
+                category_changed = (str(row.get('CATEGORY', '')) != str(row.get('updated_category', '')))
+                
+                # Check if brand was updated
+                brand_changed = (str(row.get('BRAND', '')) != str(row.get('updated_brand', '')))
+                
+                # Check if description was updated
+                desc_changed = (str(row.get('DESCRIPTION', '')) != str(row.get('updated_description', '')))
+                
+                # Check if marked as no change
+                no_change = row.get('no_change', False)
+                
+                # Count updates
+                if not no_change and (category_changed or brand_changed or desc_changed):
+                    total_updated += 1
+                
+                if desc_changed:
+                    description_updated += 1
+                
+                # Categorize update types
+                if category_changed and brand_changed:
+                    both_updated += 1
+                    both_updated_gmv += row_gmv
+                elif category_changed and not brand_changed:
+                    category_only_updated += 1
+                    category_only_gmv += row_gmv
+                elif brand_changed and not category_changed:
+                    brand_only_updated += 1
+                    brand_only_gmv += row_gmv
+                else:
+                    no_updates += 1
+                    no_updates_gmv += row_gmv
+                
+                # Special cases
+                if str(row.get('BRAND_ID', '')).lower() in ['null', 'none', '']:
+                    brand_id_null_moved += 1
+                
+                # Check for false positive (simplified - could be enhanced with more logic)
+                if 'false' in str(row.get('comments', '')).lower() and 'positive' in str(row.get('comments', '')).lower():
+                    false_positive_moved += 1
+            
+            # Calculate ending GMV and changes
+            removed_gmv = 0  # Simplified - would need more complex logic to determine removed FIDOs
+            added_gmv_null = 0  # Simplified
+            added_gmv_false_pos = 0  # Simplified
+            added_fido_gmv = 0  # Simplified
+            ending_gmv = beginning_gmv  # Simplified
+            net_change_gmv = ending_gmv - beginning_gmv
+        else:
+            # No reviews completed yet
+            beginning_gmv = removed_gmv = added_gmv_null = added_gmv_false_pos = 0
+            added_fido_gmv = ending_gmv = net_change_gmv = 0
+            total_updated = category_only_updated = brand_only_updated = both_updated = no_updates = 0
+            category_only_gmv = brand_only_gmv = both_updated_gmv = no_updates_gmv = 0
+            description_updated = brand_id_null_moved = false_positive_moved = 0
         
         # Percentages
         pct_total_updated = (total_updated / total_reviewed * 100) if total_reviewed > 0 else 0
