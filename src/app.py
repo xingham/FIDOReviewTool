@@ -249,7 +249,7 @@ st.markdown("""
         background: var(--input-bg);
         backdrop-filter: blur(5px);
         transition: all 0.3s ease;
-        color: var(--text-primary);
+        color: #1a202c !important;
         font-weight: 500;
     }
     
@@ -259,6 +259,26 @@ st.markdown("""
         border-color: #667eea;
         background: var(--input-focus-bg);
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        color: #1a202c !important;
+    }
+    
+    /* Placeholder text */
+    .stTextInput > div > div > input::placeholder,
+    .stTextArea > div > div > textarea::placeholder {
+        color: #6b7280 !important;
+        opacity: 0.7;
+    }
+    
+    /* Radio button options */
+    .stRadio > div > div > div > label {
+        color: var(--text-secondary) !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Select box options */
+    .stSelectbox > div > div > select option {
+        background: white !important;
+        color: #1a202c !important;
     }
     
     /* Input labels */
