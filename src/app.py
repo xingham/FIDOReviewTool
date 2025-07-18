@@ -1458,6 +1458,14 @@ def show_project_selection_page(queue_type):
         except (ValueError, IndexError):
             formatted_date = "Unknown"
         
+        # Ensure claim columns exist
+        if 'claimed_by' not in df.columns:
+            df['claimed_by'] = ''
+        if 'claimed_date' not in df.columns:
+            df['claimed_date'] = ''
+        if 'project_status' not in df.columns:
+            df['project_status'] = 'Available'
+        
         if project_name not in projects:
             projects[project_name] = {
                 'files': [],
@@ -1466,7 +1474,10 @@ def show_project_selection_page(queue_type):
                 'reviewed': 0,
                 'gmv': 0,
                 'uploader': df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown",
-                'date': formatted_date
+                'date': formatted_date,
+                'claimed_by': df['claimed_by'].iloc[0] if 'claimed_by' in df.columns and not df['claimed_by'].iloc[0] == '' else None,
+                'claimed_date': df['claimed_date'].iloc[0] if 'claimed_date' in df.columns and not df['claimed_date'].iloc[0] == '' else None,
+                'project_status': df['project_status'].iloc[0] if 'project_status' in df.columns else 'Available'
             }
         
         projects[project_name]['files'].append((k, df))
@@ -1502,6 +1513,14 @@ def show_project_selection_page(queue_type):
         progress = (data['reviewed'] / data['total'] * 100) if data['total'] > 0 else 0
         priority_color = priority_colors.get(data['priority'], '#6b7280')
         
+        # Determine project status display
+        status_info = ""
+        if data.get('claimed_by'):
+            claimed_date = data.get('claimed_date', 'Unknown')
+            status_info = f"<p style='margin: 0.25rem 0;'><strong>🎯 Claimed by:</strong> {data['claimed_by']} on {claimed_date}</p>"
+        else:
+            status_info = "<p style='margin: 0.25rem 0;'><strong>📌 Status:</strong> Available for review</p>"
+        
         with cols[idx % 2]:
             st.markdown(f"""
                 <div class="modern-card">
@@ -1515,6 +1534,7 @@ def show_project_selection_page(queue_type):
                         <p style="margin: 0.25rem 0;"><strong>Queue:</strong> {queue_type.title()}</p>
                         <p style="margin: 0.25rem 0;"><strong>Upload Date:</strong> {data['date']}</p>
                         <p style="margin: 0.25rem 0;"><strong>Uploader:</strong> {data['uploader']}</p>
+                        {status_info}
                         <p style="margin: 0.25rem 0;"><strong>GMV:</strong> ${data['gmv']:,.2f}</p>
                         <p style="margin: 0.25rem 0;"><strong>Progress:</strong> {data['reviewed']}/{data['total']} ({progress:.1f}%)</p>
                     </div>
@@ -1527,13 +1547,50 @@ def show_project_selection_page(queue_type):
             """, unsafe_allow_html=True)
             
             # Action buttons inside the card area (but outside the HTML since Streamlit buttons need to be separate)
-            col_action1, col_action2 = st.columns(2)
+            col_action1, col_action2, col_action3 = st.columns(3)
+            
+            # Claim/Unclaim button
             with col_action1:
+                if data.get('claimed_by'):
+                    # If claimed by current user, show unclaim option
+                    if data.get('claimed_by') == st.session_state.current_user['name']:
+                        if st.button("🔓 Unclaim", key=f"unclaim_{project_name}", use_container_width=True):
+                            # Unclaim the project
+                            for file_key, df in data['files']:
+                                df['claimed_by'] = ''
+                                df['claimed_date'] = ''
+                                df['project_status'] = 'Available'
+                                st.session_state.uploaded_files[file_key] = df
+                            save_session_state()
+                            refresh_session_state()
+                            st.success(f"✅ Project '{project_name}' unclaimed!")
+                            time.sleep(1)
+                            st.rerun()
+                    else:
+                        # Claimed by someone else
+                        st.button(f"🔒 Claimed", key=f"claimed_{project_name}", disabled=True, use_container_width=True)
+                else:
+                    # Available to claim
+                    if st.button("🎯 Claim", key=f"claim_{project_name}", type="primary", use_container_width=True):
+                        # Claim the project
+                        current_date = datetime.now().strftime("%Y-%m-%d")
+                        for file_key, df in data['files']:
+                            df['claimed_by'] = st.session_state.current_user['name']
+                            df['claimed_date'] = current_date
+                            df['project_status'] = 'Claimed'
+                            st.session_state.uploaded_files[file_key] = df
+                        save_session_state()
+                        refresh_session_state()
+                        st.success(f"✅ Project '{project_name}' claimed!")
+                        time.sleep(1)
+                        st.rerun()
+            
+            with col_action2:
                 if st.button("🔍 Review", key=f"review_{project_name}", use_container_width=True):
                     st.session_state.selected_project = data['files'][0][0]  # First file key
                     navigate_to(f"{queue_type}_review")
             
-            with col_action2:
+            with col_action3:
                 # Download option
                 first_file = data['files'][0][1]
                 csv = first_file.to_csv(index=False).encode('utf-8')
