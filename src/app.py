@@ -335,9 +335,10 @@ def show_login_panel():
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-        st.markdown('<div class="modern-card animate-slide-in">', unsafe_allow_html=True)
-        st.subheader("Please Login to Continue")
-        st.markdown("Enter your credentials to access the FIDO Review Tool")
+        st.markdown('<div style="text-align: center; margin-top: 3rem;">', unsafe_allow_html=True)
+        st.markdown('<h2 style="color: white; font-size: 2.5rem; margin-bottom: 1rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);">🔐 Please Login to Continue</h2>', unsafe_allow_html=True)
+        st.markdown('<p style="color: rgba(255, 255, 255, 0.9); font-size: 1.2rem; margin-bottom: 2rem; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);">Enter your credentials to access the FIDO Review Tool</p>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         
         name = st.text_input("👤 Full Name:", placeholder="Enter your full name")
         role = st.radio("🔒 Select your role:", ["Reviewer", "Admin"], horizontal=True)
@@ -353,8 +354,6 @@ def show_login_panel():
             navigate_to('main')
         elif login_button:
             st.error("Please fill in all fields")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
 
 # Function to display the main page
 def show_main_page():
