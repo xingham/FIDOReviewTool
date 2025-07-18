@@ -40,6 +40,7 @@ st.markdown("""
     h1, h2, h3 {
         color: #2c3e50;
         font-weight: 600;
+        text-align: center;
     }
     
     h1 {
@@ -169,8 +170,9 @@ st.markdown("""
     .stRadio > label {
         font-size: 1.3rem !important;
         font-weight: 700 !important;
-        color: #2c3e50 !important;
+        color: white !important;
         margin-bottom: 0.75rem !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
     }
     
     /* Progress bars */
