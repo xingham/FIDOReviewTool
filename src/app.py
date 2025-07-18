@@ -711,7 +711,38 @@ def show_overview_page():
 def handle_file_upload(uploaded_file, queue_type, project_title, priority="medium"):
     if uploaded_file is not None:
         try:
-            df = pd.read_csv(uploaded_file)
+            # Reset file pointer to beginning
+            uploaded_file.seek(0)
+            
+            # Read the file content to check if it's empty
+            content = uploaded_file.read()
+            if not content or len(content.strip()) == 0:
+                st.error("❌ The uploaded file is empty. Please upload a file with data.")
+                return False
+            
+            # Reset file pointer again for pandas to read
+            uploaded_file.seek(0)
+            
+            # Try to read with different parameters to handle various CSV formats
+            try:
+                df = pd.read_csv(uploaded_file)
+            except pd.errors.EmptyDataError:
+                st.error("❌ The CSV file contains no data or has no columns.")
+                return False
+            except pd.errors.ParserError as pe:
+                st.error(f"❌ Error parsing CSV file: {str(pe)}")
+                return False
+            
+            # Check if dataframe is empty
+            if df.empty:
+                st.error("❌ The CSV file contains no data rows.")
+                return False
+            
+            # Check if dataframe has no columns
+            if len(df.columns) == 0:
+                st.error("❌ The CSV file has no columns. Please ensure the file has proper headers.")
+                return False
+            
             current_time = datetime.now()
             
             # Add metadata columns
@@ -734,7 +765,8 @@ def handle_file_upload(uploaded_file, queue_type, project_title, priority="mediu
             save_session_state()
             return True
         except Exception as e:
-            st.error(f"Error uploading file: {str(e)}")
+            st.error(f"❌ Error uploading file: {str(e)}")
+            st.error("Please ensure your file is a valid CSV with proper headers and data.")
             return False
     return False
 
@@ -767,11 +799,37 @@ def show_upload_page():
             st.success("✅ File loaded successfully!")
             # Show file preview
             try:
-                preview_df = pd.read_csv(uploaded_file)
-                st.markdown("**File Preview:**")
-                st.dataframe(preview_df.head(), use_container_width=True)
-            except:
-                st.warning("Could not preview file")
+                # Reset file pointer for preview
+                uploaded_file.seek(0)
+                
+                # Check if file has content
+                content = uploaded_file.read()
+                if not content or len(content.strip()) == 0:
+                    st.warning("⚠️ The uploaded file appears to be empty.")
+                else:
+                    # Reset file pointer for pandas
+                    uploaded_file.seek(0)
+                    
+                    # Try to preview the file
+                    try:
+                        preview_df = pd.read_csv(uploaded_file)
+                        if preview_df.empty:
+                            st.warning("⚠️ The CSV file contains no data rows.")
+                        elif len(preview_df.columns) == 0:
+                            st.warning("⚠️ The CSV file has no columns.")
+                        else:
+                            st.markdown("**File Preview:**")
+                            st.dataframe(preview_df.head(), use_container_width=True)
+                            st.info(f"📊 File contains {len(preview_df)} rows and {len(preview_df.columns)} columns")
+                    except pd.errors.EmptyDataError:
+                        st.warning("⚠️ The CSV file contains no data or has no columns.")
+                    except pd.errors.ParserError as pe:
+                        st.warning(f"⚠️ Error parsing CSV file: {str(pe)}")
+                        
+                # Reset file pointer for final upload
+                uploaded_file.seek(0)
+            except Exception as e:
+                st.warning(f"⚠️ Could not preview file: {str(e)}")
         
         st.markdown('</div>', unsafe_allow_html=True)
     
