@@ -439,13 +439,22 @@ def save_session_state():
 def load_session_state():
     """Load uploaded files from disk"""
     if os.path.exists(STORAGE_FILE):
-        with open(STORAGE_FILE, 'rb') as f:
-            return pickle.load(f)
+        try:
+            with open(STORAGE_FILE, 'rb') as f:
+                data = pickle.load(f)
+                if isinstance(data, dict):
+                    return data
+                else:
+                    return {}
+        except Exception:
+            return {}
     return {}
 
 # Initialize session state
-if 'uploaded_files' not in st.session_state:
+if 'uploaded_files' not in st.session_state or not isinstance(st.session_state.uploaded_files, dict):
     st.session_state.uploaded_files = load_session_state()
+    if not isinstance(st.session_state.uploaded_files, dict):
+        st.session_state.uploaded_files = {}
 
 # Set the title of the app
 st.title("🚀 Welcome to FIDO Review Tool")
