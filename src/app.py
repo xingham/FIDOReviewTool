@@ -2420,143 +2420,152 @@ def show_reviewer_page(queue_type):
         # Review form for pending items OR editing reviewed items
         if row['status'] == 'Pending Review' or row['status'] == 'Reviewed':
             with st.container():
-                st.markdown('<div class="review-actions">', unsafe_allow_html=True)
+                # For reviewed items, use an expander to keep interface clean
+                if row['status'] == 'Reviewed':
+                    with st.expander("🔽 Edit Review", expanded=False):
+                        st.markdown('<div class="review-actions">', unsafe_allow_html=True)
+                        show_review_form = True
+                else:
+                    # For pending reviews, show form directly
+                    st.markdown('<div class="review-actions">', unsafe_allow_html=True)
+                    show_review_form = True
                 
-                col1, col2 = st.columns(2)
-                
-                # Pre-populate with existing updated values if available, handle NaN/None values
-                current_updated_desc = row.get('updated_description', '')
-                if pd.isna(current_updated_desc) or current_updated_desc == 'nan':
-                    current_updated_desc = row.get('DESCRIPTION', '')
+                if show_review_form:
+                    col1, col2 = st.columns(2)
+                    
+                    # Pre-populate with existing updated values if available, handle NaN/None values
+                    current_updated_desc = row.get('updated_description', '')
                     if pd.isna(current_updated_desc) or current_updated_desc == 'nan':
-                        current_updated_desc = ''
-                
-                current_updated_cat = row.get('updated_category', '')
-                if pd.isna(current_updated_cat) or current_updated_cat == 'nan':
-                    current_updated_cat = get_relevant_category(row.get('CATEGORY', ''))
+                        current_updated_desc = row.get('DESCRIPTION', '')
+                        if pd.isna(current_updated_desc) or current_updated_desc == 'nan':
+                            current_updated_desc = ''
+                    
+                    current_updated_cat = row.get('updated_category', '')
                     if pd.isna(current_updated_cat) or current_updated_cat == 'nan':
-                        current_updated_cat = ''
-                
-                current_updated_brand = row.get('updated_brand', '')
-                if pd.isna(current_updated_brand) or current_updated_brand == 'nan':
-                    current_updated_brand = row.get('BRAND', '')
+                        current_updated_cat = get_relevant_category(row.get('CATEGORY', ''))
+                        if pd.isna(current_updated_cat) or current_updated_cat == 'nan':
+                            current_updated_cat = ''
+                    
+                    current_updated_brand = row.get('updated_brand', '')
                     if pd.isna(current_updated_brand) or current_updated_brand == 'nan':
-                        current_updated_brand = ''
-                
-                current_comments = row.get('comments', '')
-                if pd.isna(current_comments) or current_comments == 'nan':
-                    current_comments = ''
-                
-                current_no_change = row.get('no_change', False)
-                if pd.isna(current_no_change):
-                    current_no_change = False
-                
-                with col1:
-                    updated_desc = st.text_area(
-                        "📝 Updated Description",
-                        value=current_updated_desc,
-                        key=f"desc_{idx}_{fido_id}",
-                        height=100
-                    )
+                        current_updated_brand = row.get('BRAND', '')
+                        if pd.isna(current_updated_brand) or current_updated_brand == 'nan':
+                            current_updated_brand = ''
                     
-                    updated_cat = st.text_input(
-                        "📦 Updated Category",
-                        value=current_updated_cat,
-                        key=f"cat_{idx}_{fido_id}"
-                    )
-                
-                with col2:
-                    updated_brand = st.text_input(
-                        "🏷️ Updated Brand",
-                        value=current_updated_brand,
-                        key=f"brand_{idx}_{fido_id}"
-                    )
+                    current_comments = row.get('comments', '')
+                    if pd.isna(current_comments) or current_comments == 'nan':
+                        current_comments = ''
                     
-                    comments = st.text_input(
-                        "💬 Comments",
-                        value=current_comments,
-                        key=f"comment_{idx}_{fido_id}"
-                    )
-                
-                col_check, col_submit = st.columns([1, 1])
-                with col_check:
-                    no_change = st.checkbox(
-                        "✅ No Change Required", 
-                        value=current_no_change,
-                        key=f"nochange_{idx}_{fido_id}"
-                    )
-                
-                with col_submit:
-                    button_text = "💾 Update Review" if row['status'] == 'Reviewed' else "✅ Submit Review"
-                    if st.button(
-                        button_text, 
-                        type="primary", 
-                        key=f"submit_{idx}_{fido_id}",
-                        use_container_width=True
-                    ):
-                        # Check if user made changes to the data
-                        original_desc = row.get('DESCRIPTION', '')
-                        original_cat = get_relevant_category(row.get('CATEGORY', ''))
-                        original_brand = row.get('BRAND', '')
+                    current_no_change = row.get('no_change', False)
+                    if pd.isna(current_no_change):
+                        current_no_change = False
+                    
+                    with col1:
+                        updated_desc = st.text_area(
+                            "📝 Updated Description",
+                            value=current_updated_desc,
+                            key=f"desc_{idx}_{fido_id}",
+                            height=100
+                        )
                         
-                        desc_changed = updated_desc != original_desc
-                        cat_changed = updated_cat != original_cat
-                        brand_changed = updated_brand != original_brand
-                        has_comments = comments.strip() != ''
+                        updated_cat = st.text_input(
+                            "📦 Updated Category",
+                            value=current_updated_cat,
+                            key=f"cat_{idx}_{fido_id}"
+                        )
+                    
+                    with col2:
+                        updated_brand = st.text_input(
+                            "🏷️ Updated Brand",
+                            value=current_updated_brand,
+                            key=f"brand_{idx}_{fido_id}"
+                        )
                         
-                        changes_made = desc_changed or cat_changed or brand_changed or has_comments
-                        
-                        # Validation: Prevent conflicting selections
-                        if changes_made and no_change:
-                            st.error("❌ You cannot make changes to the FIDO data AND select 'No Change Required'. Please either make changes OR select 'No Change Required', but not both.")
-                            st.stop()
-                        
-                        # Validation: Must make changes OR select no change
-                        if not changes_made and not no_change:
-                            st.error("❌ Please make changes to the FIDO data OR check 'No Change Required' before submitting.")
-                            st.stop()
-                        
-                        # Update the dataframe
-                        try:
-                            # Find the correct row index
-                            if 'FIDO' in df.columns:
-                                row_mask = df['FIDO'] == fido_id
-                                matching_rows = df[row_mask]
-                                if not matching_rows.empty:
-                                    actual_idx = matching_rows.index[0]
+                        comments = st.text_input(
+                            "💬 Comments",
+                            value=current_comments,
+                            key=f"comment_{idx}_{fido_id}"
+                        )
+                    
+                    col_check, col_submit = st.columns([1, 1])
+                    with col_check:
+                        no_change = st.checkbox(
+                            "✅ No Change Required", 
+                            value=current_no_change,
+                            key=f"nochange_{idx}_{fido_id}"
+                        )
+                    
+                    with col_submit:
+                        button_text = "💾 Update Review" if row['status'] == 'Reviewed' else "✅ Submit Review"
+                        if st.button(
+                            button_text, 
+                            type="primary", 
+                            key=f"submit_{idx}_{fido_id}",
+                            use_container_width=True
+                        ):
+                            # Check if user made changes to the data
+                            original_desc = row.get('DESCRIPTION', '')
+                            original_cat = get_relevant_category(row.get('CATEGORY', ''))
+                            original_brand = row.get('BRAND', '')
+                            
+                            desc_changed = updated_desc != original_desc
+                            cat_changed = updated_cat != original_cat
+                            brand_changed = updated_brand != original_brand
+                            has_comments = comments.strip() != ''
+                            
+                            changes_made = desc_changed or cat_changed or brand_changed or has_comments
+                            
+                            # Validation: Prevent conflicting selections
+                            if changes_made and no_change:
+                                st.error("❌ You cannot make changes to the FIDO data AND select 'No Change Required'. Please either make changes OR select 'No Change Required', but not both.")
+                                st.stop()
+                            
+                            # Validation: Must make changes OR select no change
+                            if not changes_made and not no_change:
+                                st.error("❌ Please make changes to the FIDO data OR check 'No Change Required' before submitting.")
+                                st.stop()
+                            
+                            # Update the dataframe
+                            try:
+                                # Find the correct row index
+                                if 'FIDO' in df.columns:
+                                    row_mask = df['FIDO'] == fido_id
+                                    matching_rows = df[row_mask]
+                                    if not matching_rows.empty:
+                                        actual_idx = matching_rows.index[0]
+                                    else:
+                                        # Fallback to using the enumeration index
+                                        actual_idx = df.index[idx]
                                 else:
-                                    # Fallback to using the enumeration index
                                     actual_idx = df.index[idx]
-                            else:
-                                actual_idx = df.index[idx]
+                                
+                                # DON'T update the original columns - keep them as-is
+                                # Only store in updated columns for tracking changes
+                                df.at[actual_idx, 'updated_description'] = updated_desc
+                                df.at[actual_idx, 'updated_category'] = updated_cat
+                                df.at[actual_idx, 'updated_brand'] = updated_brand
+                                df.at[actual_idx, 'no_change'] = no_change
+                                df.at[actual_idx, 'comments'] = comments
+                                df.at[actual_idx, 'status'] = 'Reviewed'
+                                df.at[actual_idx, 'reviewer'] = st.session_state.current_user['name']
+                                df.at[actual_idx, 'review_date'] = datetime.now().strftime("%Y-%m-%d")
+                                
+                            except Exception as e:
+                                st.error(f"❌ Error updating row: {e}")
+                                continue
                             
-                            # DON'T update the original columns - keep them as-is
-                            # Only store in updated columns for tracking changes
-                            df.at[actual_idx, 'updated_description'] = updated_desc
-                            df.at[actual_idx, 'updated_category'] = updated_cat
-                            df.at[actual_idx, 'updated_brand'] = updated_brand
-                            df.at[actual_idx, 'no_change'] = no_change
-                            df.at[actual_idx, 'comments'] = comments
-                            df.at[actual_idx, 'status'] = 'Reviewed'
-                            df.at[actual_idx, 'reviewer'] = st.session_state.current_user['name']
-                            df.at[actual_idx, 'review_date'] = datetime.now().strftime("%Y-%m-%d")
+                            st.session_state.uploaded_files[file_key] = df
+                            save_session_state()
                             
-                        except Exception as e:
-                            st.error(f"❌ Error updating row: {e}")
-                            continue
-                        
-                        st.session_state.uploaded_files[file_key] = df
-                        save_session_state()
-                        
-                        # Refresh to ensure immediate visibility across users
-                        refresh_session_state()
-                        
-                        action_text = "updated" if row['status'] == 'Reviewed' else "submitted"
-                        st.success(f"✅ Review {action_text} for FIDO {fido_id}!")
-                        time.sleep(1)
-                        st.rerun()
-                
-                st.markdown('</div>', unsafe_allow_html=True)
+                            # Refresh to ensure immediate visibility across users
+                            refresh_session_state()
+                            
+                            action_text = "updated" if row['status'] == 'Reviewed' else "submitted"
+                            st.success(f"✅ Review {action_text} for FIDO {fido_id}!")
+                            time.sleep(1)
+                            st.rerun()
+                    
+                    st.markdown('</div>', unsafe_allow_html=True)
     
     # Download section
     st.markdown("---")
