@@ -296,7 +296,7 @@ if 'uploaded_files' not in st.session_state:
     st.session_state.uploaded_files = load_session_state()
 
 # Set the title of the app
-st.title("� Welcome to FIDO Review Tool")
+st.title("🚀 Welcome to FIDO Review Tool")
 
 # Initialize session state for user authentication and navigation
 if 'current_user' not in st.session_state:
