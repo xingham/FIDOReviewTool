@@ -334,8 +334,8 @@ def show_login_panel():
     
     with col2:
         st.markdown('<div class="modern-card animate-slide-in">', unsafe_allow_html=True)
-        st.subheader("🚀 Welcome to FIDO Review Tool")
-        st.markdown("Please enter your credentials to continue")
+        st.subheader("Please Login to Continue")
+        st.markdown("Enter your credentials to access the FIDO Review Tool")
         
         name = st.text_input("👤 Full Name:", placeholder="Enter your full name")
         role = st.radio("🔒 Select your role:", ["Reviewer", "Admin"], horizontal=True)
