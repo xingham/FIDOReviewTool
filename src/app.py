@@ -656,9 +656,9 @@ if 'current_queue' not in st.session_state:
     st.session_state.current_queue = None
 
 # Handle URL parameters for navigation and deep linking
-query_params = st.experimental_get_query_params()
+query_params = st.query_params
 if 'fido' in query_params:
-    st.session_state.highlighted_fido = query_params['fido'][0]
+    st.session_state.highlighted_fido = query_params['fido']
 elif 'highlighted_fido' not in st.session_state:
     st.session_state.highlighted_fido = None
 
@@ -1335,7 +1335,6 @@ def show_reviewer_page(queue_type):
         status_class = 'status-reviewed' if row['status'] == 'Reviewed' else 'status-pending'
         
         # Create shareable link
-        current_url = st.experimental_get_query_params()
         share_url = f"?fido={fido_id}"
         
         st.markdown(f"""
