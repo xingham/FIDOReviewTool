@@ -800,7 +800,7 @@ if 'current_queue' not in st.session_state:
 # Handle URL parameters for navigation and deep linking
 query_params = st.query_params
 if 'fido' in query_params:
-    st.session_state.highlighted_fido = query_params['fido']
+    st.session_state.highlighted_fido = query_params.get('fido')
 elif 'highlighted_fido' not in st.session_state:
     st.session_state.highlighted_fido = None
 
@@ -897,15 +897,17 @@ def show_main_page():
                      help="Navigate to CATQ projects"):
             navigate_to('catq')
     
-    # Custom CSS to style the card buttons to match project cards
+    # Custom CSS to style the card buttons with glassmorphism effects
     st.markdown("""
         <style>
-        /* Style the card buttons to look like the project cards */
+        /* Enhanced glassmorphism styling for card buttons */
         button[data-testid*="card_nonlicensed"],
         button[data-testid*="card_licensed"], 
         button[data-testid*="card_catq"] {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            border: none !important;
+            background: rgba(255, 255, 255, 0.15) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
             border-radius: 16px !important;
             padding: 2rem !important;
             color: white !important;
@@ -914,45 +916,84 @@ def show_main_page():
             cursor: pointer !important;
             min-height: 180px !important;
             font-size: 1rem !important;
-            font-weight: 500 !important;
+            font-weight: 600 !important;
             line-height: 1.5 !important;
             text-align: center !important;
             white-space: pre-line !important;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
-            backdrop-filter: blur(10px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        
+        /* Add gradient overlay for better visual appeal */
+        button[data-testid*="card_nonlicensed"]:before,
+        button[data-testid*="card_licensed"]:before,
+        button[data-testid*="card_catq"]:before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%) !important;
+            border-radius: 16px !important;
+            z-index: -1 !important;
         }
         
         button[data-testid*="card_nonlicensed"]:hover,
         button[data-testid*="card_licensed"]:hover,
         button[data-testid*="card_catq"]:hover {
-            transform: translateY(-5px) !important;
-            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3) !important;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            transform: translateY(-8px) scale(1.02) !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
+            background: rgba(255, 255, 255, 0.25) !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
             color: white !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        }
+        
+        button[data-testid*="card_nonlicensed"]:hover:before,
+        button[data-testid*="card_licensed"]:hover:before,
+        button[data-testid*="card_catq"]:hover:before {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%) !important;
         }
         
         button[data-testid*="card_nonlicensed"]:focus,
         button[data-testid*="card_licensed"]:focus,
         button[data-testid*="card_catq"]:focus {
-            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4) !important;
-            transform: translateY(-3px) !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3), 0 15px 35px rgba(0, 0, 0, 0.25) !important;
+            transform: translateY(-5px) !important;
             outline: none !important;
-            border: 1px solid rgba(255, 255, 255, 0.4) !important;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+            background: rgba(255, 255, 255, 0.2) !important;
             color: white !important;
         }
         
-        /* Override any conflicting button styles */
+        /* Override any conflicting Streamlit button styles */
         div[data-testid="column"] button[data-testid*="card_"] {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background: rgba(255, 255, 255, 0.15) !important;
             color: white !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
         }
         
         div[data-testid="column"] button[data-testid*="card_"]:hover {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background: rgba(255, 255, 255, 0.25) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            transform: translateY(-8px) scale(1.02) !important;
+        }
+        
+        div[data-testid="column"] button[data-testid*="card_"]:focus {
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+        }
+        
+        /* Ensure no dark backgrounds override our styling */
+        button[data-testid*="card_"].stButton > button,
+        .stButton button[data-testid*="card_"] {
+            background: rgba(255, 255, 255, 0.15) !important;
             color: white !important;
             border: 1px solid rgba(255, 255, 255, 0.3) !important;
         }
