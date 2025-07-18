@@ -784,6 +784,19 @@ else:
     # Refresh data from disk to ensure real-time updates across users
     refresh_session_state()
 
+# Ensure all existing projects have claim columns
+for file_key, df in st.session_state.uploaded_files.items():
+    if 'claimed_by' not in df.columns:
+        df['claimed_by'] = ''
+    if 'claimed_date' not in df.columns:
+        df['claimed_date'] = ''
+    if 'project_status' not in df.columns:
+        df['project_status'] = 'Available'
+    st.session_state.uploaded_files[file_key] = df
+
+# Save the updated files with claim columns
+save_session_state()
+
 # Set the title of the app
 st.title("🚀 Welcome to FIDO Review Tool")
 
