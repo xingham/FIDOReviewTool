@@ -1062,8 +1062,12 @@ def show_overview_page():
         'low': 'Low Priority'
     }
     
+    # Sort projects by priority (high -> medium -> low)
+    priority_order = {'high': 3, 'medium': 2, 'low': 1}
+    sorted_projects = sorted(all_projects, key=lambda x: priority_order.get(str(x['priority']).lower(), 0), reverse=True)
+    
     cols = st.columns(2)
-    for idx, proj in enumerate(all_projects):
+    for idx, proj in enumerate(sorted_projects):
         priority_color = priority_colors.get(str(proj['priority']).lower(), '#6b7280')
         
         with cols[idx % 2]:
@@ -1392,7 +1396,11 @@ def show_project_selection_page(queue_type):
     cols = st.columns(2)
     priority_colors = {'high': '#ef4444', 'medium': '#f59e0b', 'low': '#10b981'}
     
-    for idx, (project_name, data) in enumerate(projects.items()):
+    # Sort projects by priority (high -> medium -> low)
+    priority_order = {'high': 3, 'medium': 2, 'low': 1}
+    sorted_projects = sorted(projects.items(), key=lambda x: priority_order.get(x[1]['priority'], 0), reverse=True)
+    
+    for idx, (project_name, data) in enumerate(sorted_projects):
         progress = (data['reviewed'] / data['total'] * 100) if data['total'] > 0 else 0
         priority_color = priority_colors.get(data['priority'], '#6b7280')
         
