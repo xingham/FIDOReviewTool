@@ -1488,10 +1488,40 @@ def show_reviewer_page(queue_type):
     
     if search_term:
         search_columns = ['FIDO', 'BARCODE', 'BRAND', 'CATEGORY', 'DESCRIPTION']
+        
+        # Debug: Show search information
+        st.info(f"🔍 Searching for: '{search_term}'")
+        
+        # Show available columns for debugging
+        available_search_cols = [col for col in search_columns if col in filtered_df.columns]
+        missing_search_cols = [col for col in search_columns if col not in filtered_df.columns]
+        
+        if available_search_cols:
+            st.success(f"✅ Searching in columns: {', '.join(available_search_cols)}")
+        if missing_search_cols:
+            st.warning(f"⚠️ Missing columns: {', '.join(missing_search_cols)}")
+        
+        # Show all available columns for reference
+        with st.expander("🔧 All Available Columns (Debug)"):
+            st.write(list(filtered_df.columns))
+        
         mask = pd.Series([False] * len(filtered_df))
+        matches_found = 0
+        
         for col in search_columns:
             if col in filtered_df.columns:
-                mask |= filtered_df[col].astype(str).str.contains(search_term, case=False, na=False)
+                col_mask = filtered_df[col].astype(str).str.contains(search_term, case=False, na=False)
+                col_matches = col_mask.sum()
+                if col_matches > 0:
+                    st.info(f"📋 Found {col_matches} matches in '{col}' column")
+                    matches_found += col_matches
+                mask |= col_mask
+        
+        if matches_found == 0:
+            st.warning(f"❌ No matches found for '{search_term}' in any searchable columns")
+        else:
+            st.success(f"🎯 Total matches found: {matches_found}")
+            
         filtered_df = filtered_df[mask]
     
     st.markdown(f"**Showing {len(filtered_df)} of {total} records**")
