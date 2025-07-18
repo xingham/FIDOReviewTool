@@ -877,21 +877,21 @@ def show_main_page():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("📋 Non-Licensed\n\nReview non-licensed FIDO items\n\nClick here to start reviewing", 
+        if st.button("📋 Non-Licensed", 
                      key="card_nonlicensed", 
                      use_container_width=True,
                      help="Navigate to Non-Licensed projects"):
             navigate_to('nonlicensed')
     
     with col2:
-        if st.button("📜 Licensed\n\nReview licensed FIDO items\n\nClick here to start reviewing", 
+        if st.button("📜 Licensed", 
                      key="card_licensed", 
                      use_container_width=True,
                      help="Navigate to Licensed projects"):
             navigate_to('licensed')
     
     with col3:
-        if st.button("🔍 CATQ\n\nCategory Quality Review\n\nClick here to start reviewing", 
+        if st.button("🔍 CATQ", 
                      key="card_catq", 
                      use_container_width=True,
                      help="Navigate to CATQ projects"):
