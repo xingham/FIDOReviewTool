@@ -2384,6 +2384,22 @@ def show_reviewer_page(queue_type):
                         key=f"submit_{idx}_{fido_id}",
                         use_container_width=True
                     ):
+                        # Validation: Check if changes were made OR "No Change Required" is checked
+                        original_desc = row.get('DESCRIPTION', '')
+                        original_cat = get_relevant_category(row.get('CATEGORY', ''))
+                        original_brand = row.get('BRAND', '')
+                        
+                        desc_changed = updated_desc != original_desc
+                        cat_changed = updated_cat != original_cat
+                        brand_changed = updated_brand != original_brand
+                        has_comments = comments.strip() != ''
+                        
+                        changes_made = desc_changed or cat_changed or brand_changed or has_comments
+                        
+                        if not changes_made and not no_change:
+                            st.error("❌ Please make changes to the FIDO data OR check 'No Change Required' before submitting.")
+                            st.stop()
+                        
                         # Update the dataframe
                         try:
                             # Find the correct row index
