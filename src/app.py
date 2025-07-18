@@ -1461,15 +1461,21 @@ def show_project_selection_page(queue_type):
         project_name = parts[1]
         priority = parts[2] if len(parts) > 3 else 'medium'
         
-        # Extract date from file key  
+        # Extract date from file key as fallback
         date_str = parts[-1].split('_')[0] if '_' in parts[-1] and len(parts[-1].split('_')[0]) == 8 else "00000000"
         try:
             if len(date_str) == 8 and date_str.isdigit():
-                formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                fallback_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
             else:
-                formatted_date = "Unknown"
+                fallback_date = "Unknown"
         except (ValueError, IndexError):
-            formatted_date = "Unknown"
+            fallback_date = "Unknown"
+        
+        # Use actual upload_date from dataframe if available, otherwise use fallback
+        if 'upload_date' in df.columns and not df['upload_date'].empty:
+            formatted_date = df['upload_date'].iloc[0]
+        else:
+            formatted_date = fallback_date
         
         # Ensure claim columns exist
         if 'claimed_by' not in df.columns:
