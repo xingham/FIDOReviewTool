@@ -153,7 +153,6 @@ st.markdown("""
         color: white;
         margin-bottom: 1.5rem;
         transition: all 0.3s ease;
-        cursor: pointer;
     }
     
     .project-card:hover {
@@ -555,10 +554,10 @@ def show_main_page():
     
     with col1:
         st.markdown("""
-            <div class="project-card" onclick="document.getElementById('nonlicensed_btn').click()">
+            <div class="project-card">
                 <div class="project-title">📋 Non-Licensed</div>
                 <div class="project-info">Review non-licensed FIDO items</div>
-                <div class="project-info">Click to start reviewing</div>
+                <div class="project-info">Click button below to start reviewing</div>
             </div>
         """, unsafe_allow_html=True)
         if st.button("Enter", key="nonlicensed_btn", use_container_width=True):
@@ -566,10 +565,10 @@ def show_main_page():
     
     with col2:
         st.markdown("""
-            <div class="project-card" onclick="document.getElementById('licensed_btn').click()">
+            <div class="project-card">
                 <div class="project-title">📜 Licensed</div>
                 <div class="project-info">Review licensed FIDO items</div>
-                <div class="project-info">Click to start reviewing</div>
+                <div class="project-info">Click button below to start reviewing</div>
             </div>
         """, unsafe_allow_html=True)
         if st.button("Enter", key="licensed_btn", use_container_width=True):
@@ -577,10 +576,10 @@ def show_main_page():
     
     with col3:
         st.markdown("""
-            <div class="project-card" onclick="document.getElementById('catq_btn').click()">
+            <div class="project-card">
                 <div class="project-title">🔍 CATQ</div>
                 <div class="project-info">Category Quality Review</div>
-                <div class="project-info">Click to start reviewing</div>
+                <div class="project-info">Click button below to start reviewing</div>
             </div>
         """, unsafe_allow_html=True)
         if st.button("Enter", key="catq_btn", use_container_width=True):
