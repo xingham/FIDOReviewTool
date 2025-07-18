@@ -878,36 +878,62 @@ def show_main_page():
     
     with col1:
         st.markdown("""
-            <div class="project-card">
+            <div class="project-card" onclick="document.getElementById('nav_nonlicensed').click()">
                 <div class="project-title">📋 Non-Licensed</div>
                 <div class="project-info">Review non-licensed FIDO items</div>
-                <div class="project-info">Click to start reviewing</div>
+                <div class="project-info" style="margin-top: 1rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.2); border-radius: 8px; font-weight: 600; text-align: center;">
+                    Click here to start reviewing
+                </div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button("Navigate to Non-Licensed", key="nav_nonlicensed", type="primary", use_container_width=True):
+        # Hidden button that gets triggered by card click
+        if st.button("", key="nav_nonlicensed", help="Navigate to Non-Licensed"):
             navigate_to('nonlicensed')
     
     with col2:
         st.markdown("""
-            <div class="project-card">
+            <div class="project-card" onclick="document.getElementById('nav_licensed').click()">
                 <div class="project-title">📜 Licensed</div>
                 <div class="project-info">Review licensed FIDO items</div>
-                <div class="project-info">Click to start reviewing</div>
+                <div class="project-info" style="margin-top: 1rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.2); border-radius: 8px; font-weight: 600; text-align: center;">
+                    Click here to start reviewing
+                </div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button("Navigate to Licensed", key="nav_licensed", type="primary", use_container_width=True):
+        # Hidden button that gets triggered by card click
+        if st.button("", key="nav_licensed", help="Navigate to Licensed"):
             navigate_to('licensed')
     
     with col3:
         st.markdown("""
-            <div class="project-card">
+            <div class="project-card" onclick="document.getElementById('nav_catq').click()">
                 <div class="project-title">🔍 CATQ</div>
                 <div class="project-info">Category Quality Review</div>
-                <div class="project-info">Click to start reviewing</div>
+                <div class="project-info" style="margin-top: 1rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.2); border-radius: 8px; font-weight: 600; text-align: center;">
+                    Click here to start reviewing
+                </div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button("Navigate to CATQ", key="nav_catq", type="primary", use_container_width=True):
+        # Hidden button that gets triggered by card click
+        if st.button("", key="nav_catq", help="Navigate to CATQ"):
             navigate_to('catq')
+    
+    # CSS to hide the navigation buttons
+    st.markdown("""
+        <style>
+        button[data-testid*="nav_nonlicensed"],
+        button[data-testid*="nav_licensed"],
+        button[data-testid*="nav_catq"] {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
     
     # Admin section
     if st.session_state.current_user['role'] == "Admin":
