@@ -2343,7 +2343,7 @@ def show_reviewer_page(queue_type):
     
     if search_term:
         search_columns = ['FIDO', 'BARCODE', 'BRAND', 'CATEGORY', 'DESCRIPTION']
-        mask = pd.Series([False] * len(filtered_df))
+        mask = pd.Series([False] * len(filtered_df), index=filtered_df.index)
         
         for col in search_columns:
             if col in filtered_df.columns:
@@ -2381,45 +2381,73 @@ def show_reviewer_page(queue_type):
                         <div class="fido-field"><strong>GMV:</strong><span>${get_gmv_value(row, list(filtered_df.columns)):,.2f}</span></div>
                     </div>
                     <div>
-                        <div class="fido-field"><strong>Category:</strong><span>{row.get('CATEGORY', 'N/A')}</span></div>
-                        <div class="fido-field"><strong>Description:</strong><span>{row.get('DESCRIPTION', 'N/A')}</span></div>
-                        <div class="fido-field"><strong>Status:</strong><span class="fido-status {status_class}">{row['status']}</span></div>
-                        {('<div class="fido-field"><strong>Reviewer:</strong><span>' + str(row.get("reviewer", "")) + '</span></div>') if row.get('reviewer') else ''}
+                        <div class="fido-field"><strong>Original Category:</strong><span>{row.get('CATEGORY', 'N/A')}</span></div>
+                        <div class="fido-field"><strong>Original Description:</strong><span>{row.get('DESCRIPTION', 'N/A')}</span></div>
+                        <div class="fido-field"><strong>Status:</strong><span class="fido-status {status_class}">{row['status']}</span></div>""" + (f"""
+                        <div class="fido-field"><strong>Reviewer:</strong><span>{str(row.get("reviewer", ""))}</span></div>""" if row.get('reviewer') else "") + """
                     </div>
-                </div>
+                </div>""" + (f"""
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                    <h5 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-weight: 600;">📋 Updated Information:</h5>
+                    <div class="fido-content">
+                        <div>
+                            <div class="fido-field"><strong>Updated Brand:</strong><span>{row.get('updated_brand', 'N/A')}</span></div>
+                            <div class="fido-field"><strong>Updated Category:</strong><span>{row.get('updated_category', 'N/A')}</span></div>
+                        </div>
+                        <div>
+                            <div class="fido-field"><strong>Updated Description:</strong><span>{row.get('updated_description', 'N/A')}</span></div>
+                            <div class="fido-field"><strong>Comments:</strong><span>{row.get('comments', 'N/A')}</span></div>
+                        </div>
+                    </div>
+                    <div class="fido-field"><strong>No Change Required:</strong><span>{'Yes' if row.get('no_change') else 'No'}</span></div>
+                    <div class="fido-field"><strong>Review Date:</strong><span>{row.get('review_date', 'N/A')}</span></div>
+                </div>""" if row['status'] == 'Reviewed' else "") + """
             </div>
         """, unsafe_allow_html=True)
         
-        # Review form for pending items
-        if row['status'] == 'Pending Review':
+        # Review form for pending items OR editing reviewed items
+        if row['status'] == 'Pending Review' or row['status'] == 'Reviewed':
             with st.container():
+                if row['status'] == 'Reviewed':
+                    st.markdown("### ✏️ Edit Review")
+                else:
+                    st.markdown("### 📝 Submit Review")
+                    
                 st.markdown('<div class="review-actions">', unsafe_allow_html=True)
                 
                 col1, col2 = st.columns(2)
                 
+                # Pre-populate with existing updated values if available
+                current_updated_desc = row.get('updated_description', row.get('DESCRIPTION', ''))
+                current_updated_cat = row.get('updated_category', get_relevant_category(row.get('CATEGORY', '')))
+                current_updated_brand = row.get('updated_brand', row.get('BRAND', ''))
+                current_comments = row.get('comments', '')
+                current_no_change = row.get('no_change', False)
+                
                 with col1:
                     updated_desc = st.text_area(
                         "📝 Updated Description",
-                        value=row.get('DESCRIPTION', ''),
+                        value=current_updated_desc,
                         key=f"desc_{idx}_{fido_id}",
                         height=100
                     )
                     
                     updated_cat = st.text_input(
                         "📦 Updated Category",
-                        value=get_relevant_category(row.get('CATEGORY', '')),
+                        value=current_updated_cat,
                         key=f"cat_{idx}_{fido_id}"
                     )
                 
                 with col2:
                     updated_brand = st.text_input(
                         "🏷️ Updated Brand",
-                        value=row.get('BRAND', ''),
+                        value=current_updated_brand,
                         key=f"brand_{idx}_{fido_id}"
                     )
                     
                     comments = st.text_input(
                         "💬 Comments",
+                        value=current_comments,
                         key=f"comment_{idx}_{fido_id}"
                     )
                 
@@ -2427,12 +2455,14 @@ def show_reviewer_page(queue_type):
                 with col_check:
                     no_change = st.checkbox(
                         "✅ No Change Required", 
+                        value=current_no_change,
                         key=f"nochange_{idx}_{fido_id}"
                     )
                 
                 with col_submit:
+                    button_text = "💾 Update Review" if row['status'] == 'Reviewed' else "✅ Submit Review"
                     if st.button(
-                        "✅ Submit Review", 
+                        button_text, 
                         type="primary", 
                         key=f"submit_{idx}_{fido_id}",
                         use_container_width=True
@@ -2467,12 +2497,8 @@ def show_reviewer_page(queue_type):
                             else:
                                 actual_idx = df.index[idx]
                             
-                            # Update the original columns with new values
-                            df.at[actual_idx, 'DESCRIPTION'] = updated_desc
-                            df.at[actual_idx, 'CATEGORY'] = updated_cat
-                            df.at[actual_idx, 'BRAND'] = updated_brand
-                            
-                            # Also store in updated columns for tracking changes
+                            # DON'T update the original columns - keep them as-is
+                            # Only store in updated columns for tracking changes
                             df.at[actual_idx, 'updated_description'] = updated_desc
                             df.at[actual_idx, 'updated_category'] = updated_cat
                             df.at[actual_idx, 'updated_brand'] = updated_brand
@@ -2492,24 +2518,12 @@ def show_reviewer_page(queue_type):
                         # Refresh to ensure immediate visibility across users
                         refresh_session_state()
                         
-                        st.success(f"✅ Review submitted for FIDO {fido_id}!")
+                        action_text = "updated" if row['status'] == 'Reviewed' else "submitted"
+                        st.success(f"✅ Review {action_text} for FIDO {fido_id}!")
                         time.sleep(1)
                         st.rerun()
                 
                 st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Show review details for completed items
-        elif row['status'] == 'Reviewed':
-            with st.expander(f"📋 Review Details for FIDO {fido_id}"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown(f"**Updated Description:** {row.get('updated_description', 'N/A')}")
-                    st.markdown(f"**Updated Category:** {row.get('updated_category', 'N/A')}")
-                with col2:
-                    st.markdown(f"**Updated Brand:** {row.get('updated_brand', 'N/A')}")
-                    st.markdown(f"**Comments:** {row.get('comments', 'N/A')}")
-                st.markdown(f"**No Change Required:** {'Yes' if row.get('no_change') else 'No'}")
-                st.markdown(f"**Reviewed by:** {row.get('reviewer', 'N/A')} on {row.get('review_date', 'N/A')}")
     
     # Download section
     st.markdown("---")
