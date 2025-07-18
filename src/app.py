@@ -636,11 +636,67 @@ def load_session_state():
             return {}
     return {}
 
+# Function to refresh session state from disk (for real-time updates)
+def refresh_session_state():
+    """Refresh uploaded files from disk to get latest updates"""
+    latest_data = load_session_state()
+    st.session_state.uploaded_files = latest_data if isinstance(latest_data, dict) else {}
+
+# Function to find GMV column in a dataframe
+def find_gmv_column(df):
+    """Find the first column that contains 'GMV' in its name (case insensitive)"""
+    if df is None or df.empty:
+        return None
+    
+    for col in df.columns:
+        if 'gmv' in str(col).lower():
+            return col
+    return None
+
+# Function to get GMV sum from a dataframe
+def get_gmv_sum(df):
+    """Get the sum of GMV values from any GMV-related column"""
+    gmv_col = find_gmv_column(df)
+    if gmv_col:
+        try:
+            # Convert to numeric, replacing non-numeric values with 0
+            return pd.to_numeric(df[gmv_col], errors='coerce').fillna(0).sum()
+        except:
+            return 0
+    return 0
+
+# Function to get GMV value from a row
+def get_gmv_value(row, df_columns=None):
+    """Get GMV value from a row, checking for any GMV-related column"""
+    if df_columns:
+        gmv_col = None
+        for col in df_columns:
+            if 'gmv' in str(col).lower():
+                gmv_col = col
+                break
+        if gmv_col:
+            try:
+                return pd.to_numeric(row.get(gmv_col, 0), errors='coerce') or 0
+            except:
+                return 0
+    
+    # Fallback: check the row itself for GMV-related keys
+    for key in row.index if hasattr(row, 'index') else []:
+        if 'gmv' in str(key).lower():
+            try:
+                return pd.to_numeric(row.get(key, 0), errors='coerce') or 0
+            except:
+                return 0
+    return 0
+
 # Initialize session state
 if 'uploaded_files' not in st.session_state or not isinstance(st.session_state.uploaded_files, dict):
     st.session_state.uploaded_files = load_session_state()
     if not isinstance(st.session_state.uploaded_files, dict):
         st.session_state.uploaded_files = {}
+else:
+    # Refresh data from disk to ensure real-time updates across users
+    refresh_session_state()
 
 # Set the title of the app
 st.title("🚀 Welcome to FIDO Review Tool")
@@ -797,19 +853,34 @@ def show_overview_page():
     show_back_button('overview')
     st.header("📊 Project Overview Dashboard")
 
+    # Refresh data to ensure we see latest changes from all users
+    refresh_session_state()
+    
+    # Add refresh button
+    if st.button("🔄 Refresh Data", help="Refresh to see latest changes from all users"):
+        refresh_session_state()
+        st.rerun()
+
     # Gather all projects - visible to ALL users
     all_projects = []
     for file_key, df in st.session_state.uploaded_files.items():
         parts = file_key.split('_')
+        if len(parts) < 2:  # Skip malformed keys
+            continue
+            
         queue_type = parts[0]
         project_name = parts[1]
-        date_str = parts[-1][:8]
-        formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+        date_str = parts[-1][:8] if len(parts[-1]) >= 8 else "00000000"
+        try:
+            formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+        except (ValueError, IndexError):
+            formatted_date = "Unknown"
+            
         uploader = df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown"
         priority = df['priority'].iloc[0] if 'priority' in df.columns else "medium"
         total_records = len(df)
         reviewed = len(df[df['status'] == 'Reviewed'])
-        gmv = df['GMV'].sum() if 'GMV' in df.columns else 0
+        gmv = get_gmv_sum(df)
 
         all_projects.append({
             "queue_type": queue_type,
@@ -955,6 +1026,9 @@ def show_overview_page():
                             # Save the updated state
                             save_session_state()
                             
+                            # Refresh to ensure immediate visibility across users
+                            refresh_session_state()
+                            
                             # Clean up confirmation state
                             if f"overview_confirm_delete_{proj['file_key']}" in st.session_state:
                                 del st.session_state[f"overview_confirm_delete_{proj['file_key']}"]
@@ -1009,8 +1083,13 @@ def handle_file_upload(uploaded_file, queue_type, project_title, priority="mediu
             df['comments'] = ''
             df['priority'] = priority
             
-            # Handle GMV
-            if 'GMV' not in df.columns:
+            # Handle GMV - ensure we have a standardized GMV column
+            gmv_col = find_gmv_column(df)
+            if gmv_col and gmv_col != 'GMV':
+                # Copy the GMV column to standardized name and keep original
+                df['GMV'] = pd.to_numeric(df[gmv_col], errors='coerce').fillna(0)
+            elif not gmv_col:
+                # No GMV column found, create one with zeros
                 df['GMV'] = 0
 
             formatted_date = current_time.strftime('%Y%m%d_%H%M%S')
@@ -1021,6 +1100,10 @@ def handle_file_upload(uploaded_file, queue_type, project_title, priority="mediu
             
             st.session_state.uploaded_files[file_key] = df
             save_session_state()
+            
+            # Refresh to ensure immediate visibility across users  
+            refresh_session_state()
+            
             return True
         except Exception as e:
             st.error(f"❌ Error uploading file: {str(e)}")
@@ -1131,15 +1214,30 @@ def show_project_selection_page(queue_type):
     show_back_button(f"selection_{queue_type}")
     st.header(f"📂 {queue_type.title()} Projects")
     
-    # Add info about project visibility
-    if st.session_state.current_user['role'] == "Admin":
-        st.info(f"👑 **Admin View**: All {queue_type} projects are visible. You can review or delete any project.")
-    else:
-        st.info(f"👀 **Reviewer View**: All {queue_type} projects are visible for review, regardless of who uploaded them.")
+    # Refresh data to ensure we see latest changes from all users
+    refresh_session_state()
+    
+    # Add refresh button for manual updates
+    col_refresh, col_info = st.columns([1, 4])
+    with col_refresh:
+        if st.button("🔄 Refresh", help="Refresh to see latest changes from all users"):
+            refresh_session_state()
+            st.rerun()
+    
+    # Add info about project visibility and category filtering
+    with col_info:
+        if st.session_state.current_user['role'] == "Admin":
+            st.info(f"👑 **Admin View**: Only {queue_type} projects are shown here. Projects appear only in their designated category.")
+        else:
+            st.info(f"👀 **Reviewer View**: Only {queue_type} projects are shown here. All users can see projects regardless of uploader.")
     
     # Filter files for this queue type - show ALL projects to ALL users
-    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
-                  if k.startswith(queue_type)}
+    # Fixed: Only show projects that exactly match the queue type (category)
+    queue_files = {}
+    for k, v in st.session_state.uploaded_files.items():
+        parts = k.split('_')
+        if len(parts) > 0 and parts[0] == queue_type:
+            queue_files[k] = v
     
     # Debug: Show all available file keys for troubleshooting
     if st.session_state.current_user['role'] == "Admin":
@@ -1177,7 +1275,7 @@ def show_project_selection_page(queue_type):
         projects[project_name]['files'].append((k, df))
         projects[project_name]['total'] += len(df)
         projects[project_name]['reviewed'] += len(df[df['status'] == 'Reviewed'])
-        projects[project_name]['gmv'] += df['GMV'].sum() if 'GMV' in df.columns else 0
+        projects[project_name]['gmv'] += get_gmv_sum(df)
 
     # Display projects in modern cards
     cols = st.columns(2)
@@ -1255,6 +1353,9 @@ def show_project_selection_page(queue_type):
                             # Save the updated state
                             save_session_state()
                             
+                            # Refresh to ensure immediate visibility across users
+                            refresh_session_state()
+                            
                             # Clean up confirmation state
                             if f"confirm_delete_{project_name}" in st.session_state:
                                 del st.session_state[f"confirm_delete_{project_name}"]
@@ -1271,8 +1372,17 @@ def show_reviewer_page(queue_type):
     
     show_back_button('reviewer')
     
+    # Refresh data to ensure we see latest changes from all users
+    refresh_session_state()
+    
     # Get project data
     file_key = st.session_state.selected_project
+    if file_key not in st.session_state.uploaded_files:
+        st.error("❌ Project not found. It may have been deleted.")
+        if st.button("← Back to Projects"):
+            navigate_to(queue_type)
+        return
+        
     df = st.session_state.uploaded_files[file_key]
     project_name = file_key.split('_')[1]
     
@@ -1350,7 +1460,7 @@ def show_reviewer_page(queue_type):
                         <div class="fido-field"><strong>UPC:</strong><span>{row.get('BARCODE', 'N/A')}</span></div>
                         <div class="fido-field"><strong>Brand ID:</strong><span>{row.get('BRAND_ID', 'N/A')}</span></div>
                         <div class="fido-field"><strong>Original Brand:</strong><span>{row.get('BRAND', 'N/A')}</span></div>
-                        <div class="fido-field"><strong>GMV:</strong><span>${row.get('GMV', 0):,.2f}</span></div>
+                        <div class="fido-field"><strong>GMV:</strong><span>${get_gmv_value(row, filtered_df.columns):,.2f}</span></div>
                     </div>
                     <div>
                         <div class="fido-field"><strong>Category:</strong><span>{row.get('CATEGORY', 'N/A')}</span></div>
@@ -1426,6 +1536,10 @@ def show_reviewer_page(queue_type):
                         
                         st.session_state.uploaded_files[file_key] = df
                         save_session_state()
+                        
+                        # Refresh to ensure immediate visibility across users
+                        refresh_session_state()
+                        
                         st.success(f"✅ Review submitted for FIDO {fido_id}!")
                         time.sleep(1)
                         st.rerun()
