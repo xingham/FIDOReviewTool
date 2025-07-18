@@ -295,16 +295,18 @@ st.markdown("""
     
     /* Progress bars */
     .stProgress > div > div {
-        background-color: rgba(255, 255, 255, 0.2) !important;
+        background-color: #e5e7eb !important;
         border-radius: 10px !important;
         height: 12px !important;
         margin: 0.5rem 0 !important;
+        border: 1px solid #d1d5db !important;
     }
     
     .stProgress > div > div > div {
         background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
         border-radius: 10px !important;
         height: 12px !important;
+        box-shadow: none !important;
     }
     
     /* Navigation */
@@ -1421,7 +1423,6 @@ def show_project_selection_page(queue_type):
             
             # Admin-only delete functionality
             if st.session_state.current_user['role'] == "Admin":
-                st.markdown("---")
                 col_del1, col_del2 = st.columns([1, 1])
                 with col_del2:
                     if st.button("🗑️ Delete Project", key=f"delete_{project_name}", type="secondary", use_container_width=True):
