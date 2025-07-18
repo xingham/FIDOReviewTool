@@ -1444,8 +1444,10 @@ def show_analytics_page():
         st.info("📊 No data available for analytics. Upload some projects first!")
         return
     
-    # Gather analytics data
+    # Gather analytics data with detailed FIDO statistics
     all_projects = []
+    detailed_analytics = []
+    
     for file_key, df in st.session_state.uploaded_files.items():
         parts = file_key.split('_')
         if len(parts) < 2:
@@ -1459,6 +1461,137 @@ def show_analytics_page():
         reviewed = len(df[df['status'] == 'Reviewed'])
         gmv = get_gmv_sum(df)
         
+        # Calculate detailed FIDO statistics
+        reviewed_df = df[df['status'] == 'Reviewed']
+        
+        # Basic counts
+        total_reviewed = len(reviewed_df)
+        total_updated = len(reviewed_df[
+            (reviewed_df['updated_description'] != reviewed_df['DESCRIPTION']) |
+            (reviewed_df['updated_category'] != reviewed_df['CATEGORY']) |
+            (reviewed_df['updated_brand'] != reviewed_df['BRAND'])
+        ]) if total_reviewed > 0 else 0
+        
+        # Category and Brand update analysis
+        category_only_updated = 0
+        brand_only_updated = 0
+        both_updated = 0
+        no_updates = 0
+        description_updated = 0
+        
+        category_only_gmv = 0
+        brand_only_gmv = 0
+        both_updated_gmv = 0
+        no_updates_gmv = 0
+        
+        brand_id_null_moved = 0
+        false_positive_moved = 0
+        
+        if total_reviewed > 0:
+            for _, row in reviewed_df.iterrows():
+                row_gmv = get_gmv_value(row, list(df.columns))
+                
+                # Check what was updated
+                category_changed = str(row.get('updated_category', '')) != str(row.get('CATEGORY', ''))
+                brand_changed = str(row.get('updated_brand', '')) != str(row.get('BRAND', ''))
+                description_changed = str(row.get('updated_description', '')) != str(row.get('DESCRIPTION', ''))
+                
+                if description_changed:
+                    description_updated += 1
+                
+                # Classify updates
+                if category_changed and brand_changed:
+                    both_updated += 1
+                    both_updated_gmv += row_gmv
+                elif category_changed and not brand_changed:
+                    category_only_updated += 1
+                    category_only_gmv += row_gmv
+                elif brand_changed and not category_changed:
+                    brand_only_updated += 1
+                    brand_only_gmv += row_gmv
+                else:
+                    no_updates += 1
+                    no_updates_gmv += row_gmv
+                
+                # Check for brand ID null or false positives (simplified logic)
+                original_brand = str(row.get('BRAND', '')).lower()
+                if original_brand in ['null', 'none', '', 'nan'] and brand_changed:
+                    brand_id_null_moved += 1
+                elif 'false' in original_brand or 'incorrect' in original_brand:
+                    false_positive_moved += 1
+        
+        # GMV calculations
+        beginning_gmv = gmv  # Total GMV for the project
+        removed_gmv = 0  # Would need logic to determine incorrectly assigned FIDOs
+        added_gmv_null = brand_id_null_moved * (gmv / total_records if total_records > 0 else 0)
+        added_gmv_false_pos = false_positive_moved * (gmv / total_records if total_records > 0 else 0)
+        added_fido_gmv = added_gmv_null + added_gmv_false_pos
+        ending_gmv = beginning_gmv + added_fido_gmv - removed_gmv
+        net_change_gmv = ending_gmv - beginning_gmv
+        
+        # Percentages
+        pct_total_updated = (total_updated / total_reviewed * 100) if total_reviewed > 0 else 0
+        pct_category_only = (category_only_updated / total_reviewed * 100) if total_reviewed > 0 else 0
+        pct_brand_only = (brand_only_updated / total_reviewed * 100) if total_reviewed > 0 else 0
+        pct_both_updated = (both_updated / total_reviewed * 100) if total_reviewed > 0 else 0
+        pct_no_updates = (no_updates / total_reviewed * 100) if total_reviewed > 0 else 0
+        pct_description_updated = (description_updated / total_reviewed * 100) if total_reviewed > 0 else 0
+        
+        # Totals check
+        totals_check_number = category_only_updated + brand_only_updated + both_updated + no_updates
+        totals_check_tf = "T" if totals_check_number == total_reviewed else "F"
+        
+        detailed_analytics.append({
+            "project_name": project_name,
+            "queue_type": queue_type,
+            "uploader": uploader,
+            
+            # FIDO GMV STATS
+            "beginning_fido_gmv": beginning_gmv,
+            "removed_gmv": removed_gmv,
+            "added_gmv_null": added_gmv_null,
+            "added_gmv_false_pos": added_gmv_false_pos,
+            "added_fido_gmv": added_fido_gmv,
+            "ending_fido_gmv": ending_gmv,
+            "net_change_gmv": net_change_gmv,
+            
+            # FIDO STATS
+            "total_fidos_reviewed": total_reviewed,
+            "total_fidos_updated": total_updated,
+            "pct_total_updated": pct_total_updated,
+            "brand_id_null_moved": brand_id_null_moved,
+            "false_positive_moved": false_positive_moved,
+            
+            # CATEGORY UPDATED ONLY
+            "category_only_count": category_only_updated,
+            "pct_category_only": pct_category_only,
+            "gmv_category_only": category_only_gmv,
+            
+            # BRAND UPDATED ONLY
+            "brand_only_count": brand_only_updated,
+            "pct_brand_only": pct_brand_only,
+            "gmv_brand_only": brand_only_gmv,
+            
+            # CATEGORY & BRAND UPDATED
+            "both_updated_count": both_updated,
+            "pct_both_updated": pct_both_updated,
+            "gmv_both_updated": both_updated_gmv,
+            
+            # NO UPDATES NEEDED
+            "no_updates_count": no_updates,
+            "pct_no_updates": pct_no_updates,
+            "gmv_no_updates": no_updates_gmv,
+            
+            # DESCRIPTION UPDATES
+            "description_updated_count": description_updated,
+            "pct_description_updated": pct_description_updated,
+            
+            # TOTALS CHECK
+            "totals_check_number": totals_check_number,
+            "totals_check_tf": totals_check_tf
+        })
+        
+        # Keep basic project info for summary
         all_projects.append({
             "queue_type": queue_type,
             "project_name": project_name,
@@ -1473,7 +1606,7 @@ def show_analytics_page():
         st.info("📊 No projects available for analytics.")
         return
     
-    # Analytics metrics
+    # Analytics metrics summary
     total_gmv = sum(p['gmv'] for p in all_projects)
     total_projects = len(all_projects)
     total_records = sum(p['total'] for p in all_projects)
@@ -1517,7 +1650,145 @@ def show_analytics_page():
     
     st.markdown("---")
     
-    # Analytics charts and detailed data
+    # Detailed FIDO Analytics Table
+    st.subheader("📊 Detailed FIDO Analytics")
+    
+    if detailed_analytics:
+        import pandas as pd
+        
+        # Create comprehensive analytics DataFrame
+        analytics_df = pd.DataFrame(detailed_analytics)
+        
+        # Display table with all requested metrics
+        st.markdown("### 🎯 FIDO GMV Statistics")
+        gmv_cols = ['project_name', 'beginning_fido_gmv', 'removed_gmv', 'added_gmv_null', 
+                   'added_gmv_false_pos', 'added_fido_gmv', 'ending_fido_gmv', 'net_change_gmv']
+        
+        gmv_display = analytics_df[gmv_cols].copy()
+        gmv_display.columns = ['Project', 'Beginning GMV', 'Removed GMV', 'Added GMV (Null)', 
+                              'Added GMV (False+)', 'Added FIDO GMV', 'Ending GMV', 'Net Change']
+        
+        # Format currency columns
+        currency_cols = ['Beginning GMV', 'Removed GMV', 'Added GMV (Null)', 'Added GMV (False+)', 
+                        'Added FIDO GMV', 'Ending GMV', 'Net Change']
+        for col in currency_cols:
+            gmv_display[col] = gmv_display[col].apply(lambda x: f"${x:,.2f}")
+        
+        st.dataframe(gmv_display, use_container_width=True)
+        
+        st.markdown("### 📈 FIDO Update Statistics")
+        fido_cols = ['project_name', 'total_fidos_reviewed', 'total_fidos_updated', 'pct_total_updated',
+                    'brand_id_null_moved', 'false_positive_moved']
+        
+        fido_display = analytics_df[fido_cols].copy()
+        fido_display.columns = ['Project', 'Total Reviewed', 'Total Updated', '% Updated',
+                               'Brand ID Null Moved', 'False Positive Moved']
+        fido_display['% Updated'] = fido_display['% Updated'].apply(lambda x: f"{x:.1f}%")
+        
+        st.dataframe(fido_display, use_container_width=True)
+        
+        st.markdown("### 🏷️ Category & Brand Update Analysis")
+        update_cols = ['project_name', 'category_only_count', 'pct_category_only', 'gmv_category_only',
+                      'brand_only_count', 'pct_brand_only', 'gmv_brand_only',
+                      'both_updated_count', 'pct_both_updated', 'gmv_both_updated',
+                      'no_updates_count', 'pct_no_updates', 'gmv_no_updates']
+        
+        update_display = analytics_df[update_cols].copy()
+        update_display.columns = ['Project', 'Cat Only #', 'Cat Only %', 'Cat Only GMV',
+                                 'Brand Only #', 'Brand Only %', 'Brand Only GMV',
+                                 'Both Updated #', 'Both Updated %', 'Both Updated GMV',
+                                 'No Updates #', 'No Updates %', 'No Updates GMV']
+        
+        # Format percentage and currency columns
+        pct_cols = ['Cat Only %', 'Brand Only %', 'Both Updated %', 'No Updates %']
+        for col in pct_cols:
+            update_display[col] = update_display[col].apply(lambda x: f"{x:.1f}%")
+        
+        gmv_cols = ['Cat Only GMV', 'Brand Only GMV', 'Both Updated GMV', 'No Updates GMV']
+        for col in gmv_cols:
+            update_display[col] = update_display[col].apply(lambda x: f"${x:,.2f}")
+        
+        st.dataframe(update_display, use_container_width=True)
+        
+        st.markdown("### 📝 Description Updates & Validation")
+        desc_cols = ['project_name', 'description_updated_count', 'pct_description_updated',
+                    'totals_check_number', 'totals_check_tf']
+        
+        desc_display = analytics_df[desc_cols].copy()
+        desc_display.columns = ['Project', 'Description Updated #', 'Description Updated %',
+                               'Totals Check Number', 'Totals Check T/F']
+        desc_display['Description Updated %'] = desc_display['Description Updated %'].apply(lambda x: f"{x:.1f}%")
+        
+        st.dataframe(desc_display, use_container_width=True)
+        
+        # Download option for detailed analytics
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Prepare comprehensive export
+            export_df = analytics_df.copy()
+            
+            # Rename columns to match requested format
+            export_df = export_df.rename(columns={
+                'beginning_fido_gmv': 'Beginning FIDO GMV (Correct Brand)',
+                'removed_gmv': 'Removed GMV (Incorrectly Assigned FIDOs)',
+                'added_gmv_null': 'Added GMV from Brand ID Null',
+                'added_gmv_false_pos': 'Added GMV from False Positive Brand Match',
+                'added_fido_gmv': 'Added FIDO GMV',
+                'ending_fido_gmv': 'Ending FIDO GMV',
+                'net_change_gmv': 'Net Change of FIDO GMV',
+                'total_fidos_reviewed': 'Total FIDOs Reviewed',
+                'total_fidos_updated': 'Total # of FIDOs Updated',
+                'pct_total_updated': '% Total FIDOs Updated',
+                'brand_id_null_moved': '# of Brand ID Null FIDOs moved to brand',
+                'false_positive_moved': '# of False Positive Brand Match FIDOs moved to brand',
+                'category_only_count': '# of FIDOs where ONLY Category was Updated',
+                'pct_category_only': '% of Total FIDOs where ONLY Category was Updated',
+                'gmv_category_only': 'GMV if ONLY Category was Updated',
+                'brand_only_count': '# of FIDOs where ONLY Brand was Updated',
+                'pct_brand_only': '% of Total FIDOs where ONLY Brand was Updated',
+                'gmv_brand_only': 'GMV if ONLY Brand was Updated',
+                'both_updated_count': '# of FIDOs where Category & Brand were BOTH Updated',
+                'pct_both_updated': '% of Total FIDOs where Category & Brand were BOTH Updated',
+                'gmv_both_updated': 'GMV if Category & Brand were BOTH Updated in Same FIDO',
+                'no_updates_count': '# of FIDOs where Category & Brand were NOT changed',
+                'pct_no_updates': '% of Total FIDOs where Category & Brand were NOT changed',
+                'gmv_no_updates': 'GMV if Category & Brand were NOT changed',
+                'description_updated_count': 'FIDO Description Updated',
+                'pct_description_updated': '% FIDO Description Updated',
+                'totals_check_number': 'Totals Check - Number',
+                'totals_check_tf': 'Totals Check - T or F'
+            })
+            
+            csv = export_df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                "📥 Download Detailed Analytics",
+                data=csv,
+                file_name="FIDO_Detailed_Analytics.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+        
+        with col2:
+            # Summary totals
+            total_reviewed = analytics_df['total_fidos_reviewed'].sum()
+            total_updated = analytics_df['total_fidos_updated'].sum()
+            total_gmv_change = analytics_df['net_change_gmv'].sum()
+            
+            st.markdown(f"""
+                <div class="stats-card">
+                    <div class="stats-number">{total_reviewed:,}</div>
+                    <div class="stats-label">Total FIDOs Reviewed</div>
+                </div>
+            """, unsafe_allow_html=True)
+    
+    else:
+        st.info("📊 No detailed analytics available. Complete some reviews first!")
+    
+    st.markdown("---")
+    
+    # Basic analytics charts (existing functionality)
     col1, col2 = st.columns(2)
     
     with col1:
@@ -1547,21 +1818,6 @@ def show_analytics_page():
         for queue, gmv in queue_gmv.items():
             percentage = (gmv / total_gmv * 100) if total_gmv > 0 else 0
             st.write(f"**{queue.title()}**: ${gmv:,.2f} ({percentage:.1f}%)")
-    
-    st.markdown("---")
-    
-    # Detailed project table
-    st.subheader("📋 Project Details")
-    import pandas as pd
-    
-    analytics_df = pd.DataFrame(all_projects)
-    analytics_df['progress_formatted'] = analytics_df['progress'].apply(lambda x: f"{x:.1f}%")
-    analytics_df['gmv_formatted'] = analytics_df['gmv'].apply(lambda x: f"${x:,.2f}")
-    
-    display_df = analytics_df[['project_name', 'queue_type', 'uploader', 'total', 'reviewed', 'progress_formatted', 'gmv_formatted']]
-    display_df.columns = ['Project', 'Queue', 'Uploader', 'Total', 'Reviewed', 'Progress', 'GMV']
-    
-    st.dataframe(display_df, use_container_width=True)
 
 # Enhanced reviewer interface showing all FIDOs
 def show_reviewer_page(queue_type):
