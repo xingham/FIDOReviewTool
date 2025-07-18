@@ -22,8 +22,60 @@ st.markdown("""
     /* Global styles */
     .stApp {
         font-family: 'Inter', sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
         min-height: 100vh;
+        transition: all 0.3s ease;
+    }
+    
+    /* CSS Variables for theming */
+    :root {
+        --bg-primary: #667eea;
+        --bg-secondary: #764ba2;
+        --card-bg: rgba(255, 255, 255, 0.1);
+        --card-hover-bg: rgba(255, 255, 255, 0.15);
+        --text-primary: #2c3e50;
+        --text-secondary: white;
+        --text-muted: #6b7280;
+        --border-color: rgba(255, 255, 255, 0.2);
+        --input-bg: rgba(255, 255, 255, 0.7);
+        --input-focus-bg: rgba(255, 255, 255, 0.9);
+    }
+    
+    [data-theme="light"] {
+        --bg-primary: #f8fafc;
+        --bg-secondary: #e2e8f0;
+        --card-bg: rgba(255, 255, 255, 0.9);
+        --card-hover-bg: rgba(255, 255, 255, 1);
+        --text-primary: #1a202c;
+        --text-secondary: #2d3748;
+        --text-muted: #4a5568;
+        --border-color: rgba(0, 0, 0, 0.1);
+        --input-bg: rgba(255, 255, 255, 0.9);
+        --input-focus-bg: rgba(255, 255, 255, 1);
+    }
+    
+    /* Theme toggle button */
+    .theme-toggle {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1000;
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-color);
+        border-radius: 50px;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: var(--text-secondary);
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .theme-toggle:hover {
+        background: var(--card-hover-bg);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
     }
     
     /* Base text sizing */
@@ -53,13 +105,13 @@ st.markdown("""
     
     /* Headers */
     h1, h2, h3 {
-        color: #2c3e50;
+        color: var(--text-primary);
         font-weight: 600;
         text-align: center;
     }
     
     h1 {
-        color: #2c3e50;
+        color: var(--text-primary);
         text-align: center;
         font-size: 2.2rem;
         margin-bottom: 1.5rem;
@@ -78,12 +130,12 @@ st.markdown("""
     
     /* Modern cards */
     .modern-card {
-        background: rgba(255, 255, 255, 0.1);
+        background: var(--card-bg);
         backdrop-filter: blur(10px);
         border-radius: 16px;
         padding: 2rem;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid var(--border-color);
         transition: all 0.3s ease;
         margin-bottom: 1.5rem;
     }
@@ -91,6 +143,7 @@ st.markdown("""
     .modern-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        background: var(--card-hover-bg);
     }
     
     .project-card {
@@ -122,13 +175,14 @@ st.markdown("""
     
     /* Stats cards */
     .stats-card {
-        background: rgba(255, 255, 255, 0.1);
+        background: var(--card-bg);
         backdrop-filter: blur(10px);
         border-radius: 12px;
         padding: 1.5rem;
         text-align: center;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
         border-left: 4px solid #667eea;
+        border: 1px solid var(--border-color);
     }
     
     .stats-number {
@@ -139,7 +193,7 @@ st.markdown("""
     }
     
     .stats-label {
-        color: #64748b;
+        color: var(--text-muted);
         font-size: 1rem;
         font-weight: 500;
     }
@@ -192,10 +246,10 @@ st.markdown("""
     .stTextArea > div > div > textarea {
         border-radius: 12px;
         border: 2px solid rgba(102, 126, 234, 0.3);
-        background: rgba(255, 255, 255, 0.7);
+        background: var(--input-bg);
         backdrop-filter: blur(5px);
         transition: all 0.3s ease;
-        color: #2c3e50;
+        color: var(--text-primary);
         font-weight: 500;
     }
     
@@ -203,7 +257,7 @@ st.markdown("""
     .stSelectbox > div > div > select:focus,
     .stTextArea > div > div > textarea:focus {
         border-color: #667eea;
-        background: rgba(255, 255, 255, 0.9);
+        background: var(--input-focus-bg);
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
     }
     
@@ -214,7 +268,7 @@ st.markdown("""
     .stRadio > label {
         font-size: 1.1rem !important;
         font-weight: 600 !important;
-        color: white !important;
+        color: var(--text-secondary) !important;
         margin-bottom: 0.5rem !important;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
     }
@@ -315,6 +369,56 @@ st.markdown("""
         }
     }
     </style>
+    
+    <!-- Theme Toggle Script -->
+    <div class="theme-toggle" onclick="toggleTheme()">
+        <span id="theme-icon">🌙</span>
+        <span id="theme-text">Dark</span>
+    </div>
+    
+    <script>
+    function toggleTheme() {
+        const body = document.body;
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        const icon = document.getElementById('theme-icon');
+        const text = document.getElementById('theme-text');
+        
+        body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        
+        if (newTheme === 'light') {
+            icon.textContent = '🌞';
+            text.textContent = 'Light';
+        } else {
+            icon.textContent = '🌙';
+            text.textContent = 'Dark';
+        }
+    }
+    
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        const icon = document.getElementById('theme-icon');
+        const text = document.getElementById('theme-text');
+        
+        document.body.setAttribute('data-theme', savedTheme);
+        
+        if (savedTheme === 'light') {
+            icon.textContent = '🌞';
+            text.textContent = 'Light';
+        } else {
+            icon.textContent = '🌙';
+            text.textContent = 'Dark';
+        }
+    });
+    
+    // Apply theme immediately to prevent flash
+    (function() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.body.setAttribute('data-theme', savedTheme);
+    })();
+    </script>
 """, unsafe_allow_html=True)
 
 # Add file storage constants
