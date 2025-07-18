@@ -700,15 +700,10 @@ def find_gmv_column(df):
     if df is None or df.empty:
         return None
     
-    # Debug: Print all columns for troubleshooting
-    st.write(f"🔍 **Debug - Available columns:** {list(df.columns)}")
-    
     for col in df.columns:
         if 'gmv' in str(col).lower():
-            st.success(f"✅ **Found GMV column:** '{col}'")
             return col
     
-    st.warning("⚠️ **No GMV column found.** Looking for columns containing 'GMV' (case insensitive)")
     return None
 
 # Function to get GMV sum from a dataframe
@@ -758,29 +753,6 @@ def get_gmv_value(row, df_columns=None):
                     st.error(f"❌ Error getting GMV value from key '{key}': {e}")
                     return 0.0
     return 0.0
-
-# Debug function to check GMV detection
-def debug_gmv_detection(df, context=""):
-    """Debug function to show GMV detection results"""
-    with st.expander(f"🔧 GMV Debug Info {context}"):
-        st.write("**All DataFrame Columns:**")
-        for i, col in enumerate(df.columns):
-            contains_gmv = 'gmv' in str(col).lower()
-            st.write(f"{i+1}. `{col}` {'✅ (contains GMV)' if contains_gmv else ''}")
-        
-        gmv_col = find_gmv_column(df)
-        if gmv_col:
-            st.write(f"**Detected GMV Column:** `{gmv_col}`")
-            gmv_sum = get_gmv_sum(df)
-            st.write(f"**Total GMV:** ${gmv_sum:,.2f}")
-            
-            # Show sample values
-            st.write("**Sample GMV Values:**")
-            sample_values = df[gmv_col].head(5)
-            for idx, val in sample_values.items():
-                st.write(f"Row {idx}: {val}")
-        else:
-            st.write("**No GMV Column Detected**")
 
 # Initialize session state
 if 'uploaded_files' not in st.session_state or not isinstance(st.session_state.uploaded_files, dict):
@@ -973,10 +945,6 @@ def show_overview_page():
         priority = df['priority'].iloc[0] if 'priority' in df.columns else "medium"
         total_records = len(df)
         reviewed = len(df[df['status'] == 'Reviewed'])
-        
-        # Debug GMV detection for each project
-        if st.session_state.current_user['role'] == "Admin":
-            debug_gmv_detection(df, f"- {project_name}")
         
         gmv = get_gmv_sum(df)
 
@@ -1208,9 +1176,6 @@ def handle_file_upload(uploaded_file, queue_type, project_title, priority="mediu
             formatted_date = current_time.strftime('%Y%m%d_%H%M%S')
             file_key = f"{queue_type}_{project_title}_{priority}_{formatted_date}"
             
-            # Debug: Show what queue this project will be assigned to
-            st.info(f"📌 Project will be saved to '{queue_type}' queue with key: {file_key}")
-            
             st.session_state.uploaded_files[file_key] = df
             save_session_state()
             
@@ -1352,15 +1317,6 @@ def show_project_selection_page(queue_type):
         if len(parts) > 0 and parts[0] == queue_type:
             queue_files[k] = v
     
-    # Debug: Show all available file keys for troubleshooting
-    if st.session_state.current_user['role'] == "Admin":
-        with st.expander("🔧 Debug Info (Admin Only)"):
-            st.write("**All uploaded files:**")
-            for key in st.session_state.uploaded_files.keys():
-                st.write(f"- {key}")
-            st.write(f"**Looking for files starting with:** '{queue_type}'")
-            st.write(f"**Found {len(queue_files)} matching files**")
-    
     if not queue_files:
         st.info(f"📭 No projects available in {queue_type} queue")
         if st.session_state.current_user['role'] == "Admin":
@@ -1476,6 +1432,136 @@ def show_project_selection_page(queue_type):
                             st.success(f"✅ Project '{project_name}' has been deleted successfully!")
                             time.sleep(1)
                             st.rerun()
+
+def show_analytics_page():
+    show_back_button('analytics')
+    st.header("📈 Analytics Dashboard")
+    
+    # Refresh data to ensure we see latest changes from all users
+    refresh_session_state()
+    
+    if not st.session_state.uploaded_files:
+        st.info("📊 No data available for analytics. Upload some projects first!")
+        return
+    
+    # Gather analytics data
+    all_projects = []
+    for file_key, df in st.session_state.uploaded_files.items():
+        parts = file_key.split('_')
+        if len(parts) < 2:
+            continue
+            
+        queue_type = parts[0]
+        project_name = parts[1]
+        
+        uploader = df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown"
+        total_records = len(df)
+        reviewed = len(df[df['status'] == 'Reviewed'])
+        gmv = get_gmv_sum(df)
+        
+        all_projects.append({
+            "queue_type": queue_type,
+            "project_name": project_name,
+            "uploader": uploader,
+            "total": total_records,
+            "reviewed": reviewed,
+            "progress": (reviewed / total_records * 100) if total_records > 0 else 0,
+            "gmv": gmv
+        })
+    
+    if not all_projects:
+        st.info("📊 No projects available for analytics.")
+        return
+    
+    # Analytics metrics
+    total_gmv = sum(p['gmv'] for p in all_projects)
+    total_projects = len(all_projects)
+    total_records = sum(p['total'] for p in all_projects)
+    total_reviewed = sum(p['reviewed'] for p in all_projects)
+    avg_progress = (total_reviewed / total_records * 100) if total_records > 0 else 0
+    
+    # Summary cards
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown(f"""
+            <div class="stats-card">
+                <div class="stats-number">{total_projects}</div>
+                <div class="stats-label">Total Projects</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+            <div class="stats-card">
+                <div class="stats-number">${total_gmv:,.0f}</div>
+                <div class="stats-label">Total GMV</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f"""
+            <div class="stats-card">
+                <div class="stats-number">{total_records:,}</div>
+                <div class="stats-label">Total Records</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        st.markdown(f"""
+            <div class="stats-card">
+                <div class="stats-number">{avg_progress:.1f}%</div>
+                <div class="stats-label">Overall Progress</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Analytics charts and detailed data
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("📊 Progress by Queue Type")
+        queue_stats = {}
+        for proj in all_projects:
+            queue = proj['queue_type']
+            if queue not in queue_stats:
+                queue_stats[queue] = {'total': 0, 'reviewed': 0}
+            queue_stats[queue]['total'] += proj['total']
+            queue_stats[queue]['reviewed'] += proj['reviewed']
+        
+        for queue, stats in queue_stats.items():
+            progress = (stats['reviewed'] / stats['total'] * 100) if stats['total'] > 0 else 0
+            st.write(f"**{queue.title()}**: {stats['reviewed']}/{stats['total']} ({progress:.1f}%)")
+            st.progress(progress / 100)
+    
+    with col2:
+        st.subheader("💰 GMV by Queue Type")
+        queue_gmv = {}
+        for proj in all_projects:
+            queue = proj['queue_type']
+            if queue not in queue_gmv:
+                queue_gmv[queue] = 0
+            queue_gmv[queue] += proj['gmv']
+        
+        for queue, gmv in queue_gmv.items():
+            percentage = (gmv / total_gmv * 100) if total_gmv > 0 else 0
+            st.write(f"**{queue.title()}**: ${gmv:,.2f} ({percentage:.1f}%)")
+    
+    st.markdown("---")
+    
+    # Detailed project table
+    st.subheader("📋 Project Details")
+    import pandas as pd
+    
+    analytics_df = pd.DataFrame(all_projects)
+    analytics_df['progress_formatted'] = analytics_df['progress'].apply(lambda x: f"{x:.1f}%")
+    analytics_df['gmv_formatted'] = analytics_df['gmv'].apply(lambda x: f"${x:,.2f}")
+    
+    display_df = analytics_df[['project_name', 'queue_type', 'uploader', 'total', 'reviewed', 'progress_formatted', 'gmv_formatted']]
+    display_df.columns = ['Project', 'Queue', 'Uploader', 'Total', 'Reviewed', 'Progress', 'GMV']
+    
+    st.dataframe(display_df, use_container_width=True)
 
 # Enhanced reviewer interface showing all FIDOs
 def show_reviewer_page(queue_type):
@@ -1728,6 +1814,8 @@ if st.session_state.current_user:
         show_overview_page()
     elif current_page == 'upload':
         show_upload_page()
+    elif current_page == 'analytics':
+        show_analytics_page()
     elif current_page in ['nonlicensed', 'licensed', 'catq']:
         show_project_selection_page(current_page)
     elif current_page.endswith('_review'):
