@@ -878,53 +878,36 @@ def show_main_page():
     
     with col1:
         st.markdown("""
-            <div class="project-card" onclick="navigateToPage('nonlicensed')">
+            <div class="project-card">
                 <div class="project-title">📋 Non-Licensed</div>
                 <div class="project-info">Review non-licensed FIDO items</div>
                 <div class="project-info">Click to start reviewing</div>
             </div>
         """, unsafe_allow_html=True)
+        if st.button("Navigate to Non-Licensed", key="nav_nonlicensed", type="primary", use_container_width=True):
+            navigate_to('nonlicensed')
     
     with col2:
         st.markdown("""
-            <div class="project-card" onclick="navigateToPage('licensed')">
+            <div class="project-card">
                 <div class="project-title">📜 Licensed</div>
                 <div class="project-info">Review licensed FIDO items</div>
                 <div class="project-info">Click to start reviewing</div>
             </div>
         """, unsafe_allow_html=True)
+        if st.button("Navigate to Licensed", key="nav_licensed", type="primary", use_container_width=True):
+            navigate_to('licensed')
     
     with col3:
         st.markdown("""
-            <div class="project-card" onclick="navigateToPage('catq')">
+            <div class="project-card">
                 <div class="project-title">🔍 CATQ</div>
                 <div class="project-info">Category Quality Review</div>
                 <div class="project-info">Click to start reviewing</div>
             </div>
         """, unsafe_allow_html=True)
-    
-    # Hidden navigation buttons that can be triggered by JavaScript
-    col_hidden1, col_hidden2, col_hidden3 = st.columns(3)
-    with col_hidden1:
-        if st.button("Navigate to Non-Licensed", key="nav_nonlicensed", type="primary"):
-            navigate_to('nonlicensed')
-    with col_hidden2:
-        if st.button("Navigate to Licensed", key="nav_licensed", type="primary"):
-            navigate_to('licensed')
-    with col_hidden3:
-        if st.button("Navigate to CATQ", key="nav_catq", type="primary"):
+        if st.button("Navigate to CATQ", key="nav_catq", type="primary", use_container_width=True):
             navigate_to('catq')
-    
-    # Hide the navigation buttons with CSS
-    st.markdown("""
-        <style>
-        button[data-testid*="nav_nonlicensed"],
-        button[data-testid*="nav_licensed"],
-        button[data-testid*="nav_catq"] {
-            display: none !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
     
     # Admin section
     if st.session_state.current_user['role'] == "Admin":
