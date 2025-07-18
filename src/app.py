@@ -754,6 +754,20 @@ def get_gmv_value(row, df_columns=None):
                     return 0.0
     return 0.0
 
+# Function to extract relevant category (part after last ">")
+def get_relevant_category(category_hierarchy):
+    """Extract the relevant category from a hierarchical category string"""
+    if not category_hierarchy or pd.isna(category_hierarchy):
+        return ''
+    
+    category_str = str(category_hierarchy).strip()
+    if '>' in category_str:
+        # Split by ">" and get the last part, stripping whitespace
+        return category_str.split('>')[-1].strip()
+    else:
+        # If no ">" found, return the original category
+        return category_str
+
 # Initialize session state
 if 'uploaded_files' not in st.session_state or not isinstance(st.session_state.uploaded_files, dict):
     st.session_state.uploaded_files = load_session_state()
@@ -1946,7 +1960,7 @@ def show_reviewer_page(queue_type):
                     
                     updated_cat = st.text_input(
                         "📦 Updated Category",
-                        value=row.get('CATEGORY', ''),
+                        value=get_relevant_category(row.get('CATEGORY', '')),
                         key=f"cat_{idx}_{fido_id}"
                     )
                 
