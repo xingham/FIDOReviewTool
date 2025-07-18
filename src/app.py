@@ -363,8 +363,8 @@ def show_login_panel():
     
     with col2:
         st.markdown('<div style="text-align: center; margin-top: 3rem;">', unsafe_allow_html=True)
-        st.markdown('<h2 style="color: white; font-size: 2rem; margin-bottom: 1rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);">🔐 Please Login to Continue</h2>', unsafe_allow_html=True)
-        st.markdown('<p style="color: rgba(255, 255, 255, 0.9); font-size: 1.1rem; margin-bottom: 2rem; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);">Enter your credentials to access the FIDO Review Tool</p>', unsafe_allow_html=True)
+        st.markdown('<h2 style="color: white; font-size: 2rem; margin-bottom: 1rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); text-align: center;">🔐 Please Login to Continue</h2>', unsafe_allow_html=True)
+        st.markdown('<p style="color: rgba(255, 255, 255, 0.9); font-size: 1.1rem; margin-bottom: 2rem; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); text-align: center;">Enter your credentials to access the FIDO Review Tool</p>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
         name = st.text_input("👤 Full Name:", placeholder="Enter your full name")
