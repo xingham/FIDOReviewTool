@@ -33,9 +33,9 @@ st.markdown("""
         --bg-secondary: #764ba2;
         --card-bg: rgba(255, 255, 255, 0.1);
         --card-hover-bg: rgba(255, 255, 255, 0.15);
-        --text-primary: #2c3e50;
-        --text-secondary: white;
-        --text-muted: #6b7280;
+        --text-primary: #ffffff;
+        --text-secondary: #ffffff;
+        --text-muted: #e2e8f0;
         --border-color: rgba(255, 255, 255, 0.2);
         --input-bg: rgba(255, 255, 255, 0.7);
         --input-focus-bg: rgba(255, 255, 255, 0.9);
@@ -587,7 +587,7 @@ def show_overview_page():
     show_back_button('overview')
     st.header("📊 Project Overview Dashboard")
 
-    # Gather all projects
+    # Gather all projects - visible to ALL users
     all_projects = []
     for file_key, df in st.session_state.uploaded_files.items():
         parts = file_key.split('_')
@@ -616,6 +616,9 @@ def show_overview_page():
 
     if not all_projects:
         st.info("🚀 No projects uploaded yet. Start by uploading your first project!")
+        if st.session_state.current_user['role'] == "Admin":
+            if st.button("📤 Upload First Project", type="primary"):
+                navigate_to('upload')
         return
 
     # Summary statistics
@@ -665,6 +668,12 @@ def show_overview_page():
     # Project grid
     st.subheader("📋 All Projects")
     
+    # Add info about project visibility and permissions
+    if st.session_state.current_user['role'] == "Admin":
+        st.info("👑 **Admin View**: You can see all projects and delete them. Regular reviewers can see all projects but cannot delete them.")
+    else:
+        st.info("👀 **Reviewer View**: You can see and review all projects uploaded by any user. Only admins can delete projects.")
+    
     priority_colors = {
         'high': '#ef4444',
         'medium': '#f59e0b', 
@@ -685,12 +694,12 @@ def show_overview_page():
             st.markdown(f"""
                 <div class="modern-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h4 style="margin: 0; color: #1f2937;">{proj['project_name']}</h4>
+                        <h4 style="margin: 0; color: var(--text-primary); font-weight: 600;">{proj['project_name']}</h4>
                         <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">
                             {priority_map.get(str(proj['priority']).lower(), proj['priority'])}
                         </span>
                     </div>
-                    <div style="color: #6b7280; margin-bottom: 1rem;">
+                    <div style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">
                         <p style="margin: 0.25rem 0;"><strong>Queue:</strong> {proj['queue_type'].title()}</p>
                         <p style="margin: 0.25rem 0;"><strong>Upload Date:</strong> {proj['date']}</p>
                         <p style="margin: 0.25rem 0;"><strong>Uploader:</strong> {proj['uploader']}</p>
@@ -703,10 +712,46 @@ def show_overview_page():
             # Progress bar
             st.progress(proj['progress'] / 100)
             
-            # Action button
-            if st.button(f"🔍 Review Project", key=f"review_btn_{proj['file_key']}", use_container_width=True):
-                st.session_state.selected_project = proj['file_key']
-                navigate_to(f"{proj['queue_type']}_review")
+            # Action buttons
+            col_action1, col_action2 = st.columns(2)
+            with col_action1:
+                if st.button(f"🔍 Review Project", key=f"review_btn_{proj['file_key']}", use_container_width=True):
+                    st.session_state.selected_project = proj['file_key']
+                    navigate_to(f"{proj['queue_type']}_review")
+            
+            # Admin delete functionality from overview
+            if st.session_state.current_user['role'] == "Admin":
+                with col_action2:
+                    if st.button(f"🗑️ Delete", key=f"overview_delete_{proj['file_key']}", type="secondary", use_container_width=True):
+                        # Show confirmation
+                        if f"overview_confirm_delete_{proj['file_key']}" not in st.session_state:
+                            st.session_state[f"overview_confirm_delete_{proj['file_key']}"] = True
+                            st.warning(f"⚠️ Delete '{proj['project_name']}'?")
+                            st.rerun()
+                
+                # Handle confirmation for overview delete
+                if st.session_state.get(f"overview_confirm_delete_{proj['file_key']}", False):
+                    col_confirm1, col_confirm2 = st.columns([1, 1])
+                    with col_confirm1:
+                        if st.button("❌ Cancel", key=f"overview_cancel_{proj['file_key']}", use_container_width=True):
+                            del st.session_state[f"overview_confirm_delete_{proj['file_key']}"]
+                            st.rerun()
+                    with col_confirm2:
+                        if st.button("✅ Delete", key=f"overview_confirm_btn_{proj['file_key']}", type="primary", use_container_width=True):
+                            # Delete the file
+                            if proj['file_key'] in st.session_state.uploaded_files:
+                                del st.session_state.uploaded_files[proj['file_key']]
+                            
+                            # Save the updated state
+                            save_session_state()
+                            
+                            # Clean up confirmation state
+                            if f"overview_confirm_delete_{proj['file_key']}" in st.session_state:
+                                del st.session_state[f"overview_confirm_delete_{proj['file_key']}"]
+                            
+                            st.success(f"✅ Project '{proj['project_name']}' deleted!")
+                            time.sleep(1)
+                            st.rerun()
 
 def handle_file_upload(uploaded_file, queue_type, project_title, priority="medium"):
     if uploaded_file is not None:
@@ -760,6 +805,9 @@ def handle_file_upload(uploaded_file, queue_type, project_title, priority="mediu
 
             formatted_date = current_time.strftime('%Y%m%d_%H%M%S')
             file_key = f"{queue_type}_{project_title}_{priority}_{formatted_date}"
+            
+            # Debug: Show what queue this project will be assigned to
+            st.info(f"📌 Project will be saved to '{queue_type}' queue with key: {file_key}")
             
             st.session_state.uploaded_files[file_key] = df
             save_session_state()
@@ -861,8 +909,9 @@ def show_upload_page():
                     "CATQ": "catq"
                 }
                 
-                if handle_file_upload(uploaded_file, queue_mapping[queue_type], project_title, priority):
-                    st.success(f"🎉 Project '{project_title}' uploaded successfully!")
+                mapped_queue_type = queue_mapping[queue_type]
+                if handle_file_upload(uploaded_file, mapped_queue_type, project_title, priority):
+                    st.success(f"🎉 Project '{project_title}' uploaded successfully to {queue_type} queue!")
                     time.sleep(2)
                     st.rerun()
             else:
@@ -872,9 +921,24 @@ def show_project_selection_page(queue_type):
     show_back_button(f"selection_{queue_type}")
     st.header(f"📂 {queue_type.title()} Projects")
     
-    # Filter files for this queue type
+    # Add info about project visibility
+    if st.session_state.current_user['role'] == "Admin":
+        st.info(f"👑 **Admin View**: All {queue_type} projects are visible. You can review or delete any project.")
+    else:
+        st.info(f"👀 **Reviewer View**: All {queue_type} projects are visible for review, regardless of who uploaded them.")
+    
+    # Filter files for this queue type - show ALL projects to ALL users
     queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
                   if k.startswith(queue_type)}
+    
+    # Debug: Show all available file keys for troubleshooting
+    if st.session_state.current_user['role'] == "Admin":
+        with st.expander("🔧 Debug Info (Admin Only)"):
+            st.write("**All uploaded files:**")
+            for key in st.session_state.uploaded_files.keys():
+                st.write(f"- {key}")
+            st.write(f"**Looking for files starting with:** '{queue_type}'")
+            st.write(f"**Found {len(queue_files)} matching files**")
     
     if not queue_files:
         st.info(f"📭 No projects available in {queue_type} queue")
@@ -917,12 +981,12 @@ def show_project_selection_page(queue_type):
             st.markdown(f"""
                 <div class="modern-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h4 style="margin: 0;">{project_name}</h4>
+                        <h4 style="margin: 0; color: var(--text-primary); font-weight: 600;">{project_name}</h4>
                         <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem;">
                             {data['priority'].title()}
                         </span>
                     </div>
-                    <div style="color: #6b7280; margin-bottom: 1rem;">
+                    <div style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">
                         <p style="margin: 0.25rem 0;">👤 <strong>Uploader:</strong> {data['uploader']}</p>
                         <p style="margin: 0.25rem 0;">💰 <strong>GMV:</strong> ${data['gmv']:,.2f}</p>
                         <p style="margin: 0.25rem 0;">📊 <strong>Progress:</strong> {data['reviewed']}/{data['total']} ({progress:.1f}%)</p>
@@ -950,6 +1014,44 @@ def show_project_selection_page(queue_type):
                     key=f"download_{project_name}",
                     use_container_width=True
                 )
+            
+            # Admin-only delete functionality
+            if st.session_state.current_user['role'] == "Admin":
+                st.markdown("---")
+                col_del1, col_del2 = st.columns([1, 1])
+                with col_del2:
+                    if st.button("🗑️ Delete Project", key=f"delete_{project_name}", type="secondary", use_container_width=True):
+                        # Show confirmation
+                        if f"confirm_delete_{project_name}" not in st.session_state:
+                            st.session_state[f"confirm_delete_{project_name}"] = True
+                            st.warning(f"⚠️ Are you sure you want to delete '{project_name}'? This action cannot be undone!")
+                            st.rerun()
+                
+                # Handle confirmation
+                if st.session_state.get(f"confirm_delete_{project_name}", False):
+                    col_confirm1, col_confirm2 = st.columns([1, 1])
+                    with col_confirm1:
+                        if st.button("❌ Cancel", key=f"cancel_delete_{project_name}", use_container_width=True):
+                            del st.session_state[f"confirm_delete_{project_name}"]
+                            st.rerun()
+                    with col_confirm2:
+                        if st.button("✅ Confirm Delete", key=f"confirm_delete_btn_{project_name}", type="primary", use_container_width=True):
+                            # Delete all files for this project
+                            files_to_delete = [file_key for file_key, _ in data['files']]
+                            for file_key in files_to_delete:
+                                if file_key in st.session_state.uploaded_files:
+                                    del st.session_state.uploaded_files[file_key]
+                            
+                            # Save the updated state
+                            save_session_state()
+                            
+                            # Clean up confirmation state
+                            if f"confirm_delete_{project_name}" in st.session_state:
+                                del st.session_state[f"confirm_delete_{project_name}"]
+                            
+                            st.success(f"✅ Project '{project_name}' has been deleted successfully!")
+                            time.sleep(1)
+                            st.rerun()
 
 # Simplified reviewer interface
 def show_reviewer_page(queue_type):
@@ -957,7 +1059,7 @@ def show_reviewer_page(queue_type):
         show_project_selection_page(queue_type)
         return
     
-    show_back_button(queue_type)
+    show_back_button('reviewer')
     
     # Get project data
     file_key = st.session_state.selected_project
@@ -991,12 +1093,12 @@ def show_reviewer_page(queue_type):
         
         col1, col2 = st.columns(2)
         with col1:
-            st.text(f"UPC: {row.get('BARCODE', 'N/A')}")
-            st.text(f"Brand ID: {row.get('BRAND_ID', 'N/A')}")
-            st.text(f"Original Brand: {row.get('BRAND', 'N/A')}")
+            st.markdown(f"**UPC:** {row.get('BARCODE', 'N/A')}")
+            st.markdown(f"**Brand ID:** {row.get('BRAND_ID', 'N/A')}")
+            st.markdown(f"**Original Brand:** {row.get('BRAND', 'N/A')}")
         with col2:
-            st.text(f"Category: {row.get('CATEGORY', 'N/A')}")
-            st.text(f"Description: {row.get('DESCRIPTION', 'N/A')}")
+            st.markdown(f"**Category:** {row.get('CATEGORY', 'N/A')}")
+            st.markdown(f"**Description:** {row.get('DESCRIPTION', 'N/A')}")
         
         # Edit fields
         updated_desc = st.text_area(
