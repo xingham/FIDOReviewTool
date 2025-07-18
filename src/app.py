@@ -1404,12 +1404,20 @@ def show_project_selection_page(queue_type):
     # Refresh data to ensure we see latest changes from all users
     refresh_session_state()
     
-    # Add refresh button for manual updates
-    col_refresh, col_info = st.columns([1, 4])
+    # Add refresh button and search bar for manual updates
+    col_refresh, col_search, col_info = st.columns([1, 2, 2])
     with col_refresh:
         if st.button("🔄 Refresh", help="Refresh to see latest changes from all users"):
             refresh_session_state()
             st.rerun()
+    
+    with col_search:
+        search_query = st.text_input(
+            "🔍 Search Projects",
+            placeholder="Search by project name...",
+            key=f"project_search_{queue_type}",
+            help="Filter projects by name"
+        )
     
     # Add info about project visibility and category filtering
     with col_info:
@@ -1473,6 +1481,22 @@ def show_project_selection_page(queue_type):
     # Sort projects by priority (high -> medium -> low)
     priority_order = {'high': 3, 'medium': 2, 'low': 1}
     sorted_projects = sorted(projects.items(), key=lambda x: priority_order.get(x[1]['priority'], 0), reverse=True)
+    
+    # Apply search filter if search query is provided
+    if search_query:
+        filtered_projects = []
+        for project_name, data in sorted_projects:
+            if search_query.lower() in project_name.lower():
+                filtered_projects.append((project_name, data))
+        sorted_projects = filtered_projects
+    
+    # Show search results info
+    if search_query:
+        if sorted_projects:
+            st.success(f"🔍 Found {len(sorted_projects)} project(s) matching '{search_query}'")
+        else:
+            st.warning(f"❌ No projects found matching '{search_query}'. Try a different search term.")
+            return
     
     for idx, (project_name, data) in enumerate(sorted_projects):
         progress = (data['reviewed'] / data['total'] * 100) if data['total'] > 0 else 0
