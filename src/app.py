@@ -143,16 +143,32 @@ st.markdown("""
     .stTextInput > div > div > input,
     .stSelectbox > div > div > select,
     .stTextArea > div > div > textarea {
-        border-radius: 8px;
-        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(5px);
         transition: all 0.3s ease;
+        color: #2c3e50;
+        font-weight: 500;
     }
     
     .stTextInput > div > div > input:focus,
     .stSelectbox > div > div > select:focus,
     .stTextArea > div > div > textarea:focus {
         border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+    
+    /* Input labels */
+    .stTextInput > label,
+    .stSelectbox > label,
+    .stTextArea > label,
+    .stRadio > label {
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        color: #2c3e50 !important;
+        margin-bottom: 0.75rem !important;
     }
     
     /* Progress bars */
