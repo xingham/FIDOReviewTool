@@ -43,12 +43,11 @@ st.markdown("""
     }
     
     h1 {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #2c3e50;
         text-align: center;
         font-size: 3rem;
         margin-bottom: 2rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     
     /* Modern cards */
