@@ -5,6 +5,255 @@ import time
 import pickle
 import os
 
+# Configure page
+st.set_page_config(
+    page_title="FIDO Review Tool",
+    page_icon="🔍",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Add custom CSS for modern styling
+st.markdown("""
+    <style>
+    /* Import modern font */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    /* Global styles */
+    .stApp {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    /* Main container */
+    .main > div {
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        margin: 1rem;
+    }
+    
+    /* Headers */
+    h1, h2, h3 {
+        color: #2c3e50;
+        font-weight: 600;
+    }
+    
+    h1 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-align: center;
+        font-size: 3rem;
+        margin-bottom: 2rem;
+    }
+    
+    /* Modern cards */
+    .modern-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+    
+    .modern-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    .project-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+    }
+    
+    .project-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .project-info {
+        font-size: 0.95rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Stats cards */
+    .stats-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid #667eea;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-label {
+        color: #64748b;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    /* Buttons */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    }
+    
+    /* Sidebar */
+    .sidebar .sidebar-content {
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    /* Input fields */
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div > select,
+    .stTextArea > div > div > textarea {
+        border-radius: 8px;
+        border: 2px solid #e2e8f0;
+        transition: all 0.3s ease;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stSelectbox > div > div > select:focus,
+    .stTextArea > div > div > textarea:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* Progress bars */
+    .stProgress > div > div > div {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+    }
+    
+    /* Navigation */
+    .nav-pill {
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 500;
+        margin: 0.25rem;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-pill:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    /* Animations */
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-slide-in {
+        animation: slideIn 0.5s ease-out;
+    }
+    
+    /* Modern tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: rgba(102, 126, 234, 0.1);
+        border-radius: 12px;
+        padding: 12px 24px;
+        border: none;
+        color: #667eea;
+        font-weight: 500;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    /* File uploader */
+    .stFileUploader > div {
+        border: 2px dashed #667eea;
+        border-radius: 12px;
+        background: rgba(102, 126, 234, 0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .stFileUploader > div:hover {
+        border-color: #764ba2;
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    /* Success/Error messages */
+    .stSuccess {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-radius: 12px;
+        color: white;
+    }
+    
+    .stError {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        border-radius: 12px;
+        color: white;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+        .main > div {
+            margin: 0.5rem;
+            padding: 1rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+        }
+        
+        .project-card {
+            padding: 1.5rem;
+        }
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Add file storage constants
 STORAGE_DIR = "data"
 STORAGE_FILE = os.path.join(STORAGE_DIR, "uploaded_files.pkl")
@@ -32,7 +281,7 @@ if 'uploaded_files' not in st.session_state:
     st.session_state.uploaded_files = load_session_state()
 
 # Set the title of the app
-st.title("FIDO Review Tool")
+st.title("🔍 FIDO Review Tool")
 
 # Initialize session state for user authentication and navigation
 if 'current_user' not in st.session_state:
@@ -52,34 +301,6 @@ def navigate_to(page):
 
 def show_back_button(prefix=""):
     if len(st.session_state.page_history) > 1:
-        st.markdown("""
-            <style>
-            /* Back button specific style */
-            [data-testid="back_button"] button {
-                background-color: #f0f2f6 !important;
-                border: none !important;
-                padding: 0.5rem 1rem !important;
-                border-radius: 0.5rem !important;
-                color: #1e3d59 !important;
-                font-size: 1rem !important;
-                cursor: pointer !important;
-                transition: all 0.3s ease !important;
-                margin-bottom: 1rem !important;
-                display: inline-flex !important;
-                align-items: center !important;
-                gap: 0.5rem !important;
-                width: auto !important;
-                height: auto !important;
-                background-image: none !important;
-                box-shadow: none !important;
-            }
-            [data-testid="back_button"] button:hover {
-                background-color: #e0e2e6 !important;
-                transform: translateX(-5px) !important;
-            }
-            </style>
-        """, unsafe_allow_html=True)
-        
         if st.button('← Back', key=f"back_button_{prefix}"):
             previous_page = st.session_state.page_history[-2]
             if previous_page == 'login':
@@ -94,626 +315,525 @@ def get_current_page():
 
 # Function to display the login panel
 def show_login_panel():
-    st.subheader("Welcome to the FIDO Review Tool")
-    name = st.text_input("Name:")
-    role = st.radio("Select your role:", ["Reviewer", "Admin"])
+    col1, col2, col3 = st.columns([1, 2, 1])
     
-    login_button = st.button("Login")
-    if login_button and name and role:
-        st.session_state.current_user = {"name": name, "role": role}
-        st.success(f"Welcome, {name} ({role})")
-        navigate_to('main')  # Use navigate_to instead of directly appending
-    elif login_button:
-        st.error("Please enter your name and select a role.")
+    with col2:
+        st.markdown('<div class="modern-card animate-slide-in">', unsafe_allow_html=True)
+        st.subheader("🚀 Welcome to FIDO Review Tool")
+        st.markdown("Please enter your credentials to continue")
+        
+        name = st.text_input("👤 Full Name:", placeholder="Enter your full name")
+        role = st.radio("🔒 Select your role:", ["Reviewer", "Admin"], horizontal=True)
+        
+        col_a, col_b = st.columns(2)
+        with col_b:
+            login_button = st.button("🔑 Login", type="primary", use_container_width=True)
+        
+        if login_button and name and role:
+            st.session_state.current_user = {"name": name, "role": role}
+            st.success(f"Welcome, {name}! 👋")
+            time.sleep(1)
+            navigate_to('main')
+        elif login_button:
+            st.error("Please fill in all fields")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # Function to display the main page
 def show_main_page():
     show_back_button()
-    st.header("Main Page")
     
-    # Add custom CSS for main menu cards
-    st.markdown("""
-        <style>
-        /* Main menu card buttons */
-        [data-testid="nonlicensed"] button,
-        [data-testid="licensed"] button,
-        [data-testid="catq"] button {
-            background-color: #1e3d59 !important;
-            border-radius: 12px !important;
-            padding: 1.5rem !important;
-            margin: 0.5rem 0 !important;
-            height: 180px !important;
-            width: 100% !important;
-            border: none !important;
-            color: white !important;
-            transition: all 0.3s ease !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 1rem !important;
-            font-size: 1.2rem !important;
-            line-height: 1.3 !important;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-            background-image: linear-gradient(145deg, #1e3d59 0%, #2a527a 100%) !important;
-            white-space: pre-line !important;
-            text-align: center !important;
-        }
-        
-        /* Card hover effects */
-        [data-testid="nonlicensed"] button:hover,
-        [data-testid="licensed"] button:hover,
-        [data-testid="catq"] button:hover {
-            transform: translateY(-5px) !important;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
-            background-image: linear-gradient(145deg, #2a527a 0%, #1e3d59 100%) !important;
-        }
-
-        /* Upload button style */
-        [data-testid="upload"] button {
-            background-color: #4CAF50 !important;
-            height: 50px !important;
-            background-image: none !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    # Welcome message with user info
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown(f"### 👋 Welcome back, {st.session_state.current_user['name']}")
+        st.markdown(f"**Role:** {st.session_state.current_user['role']}")
     
-    # Create layout with modern cards
+    with col2:
+        if st.button("📊 Overview", type="secondary"):
+            navigate_to('overview')
+    
+    st.markdown("---")
+    
+    # Modern dashboard cards
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("📋\n\nNon-Licensed\nFIDO Review", key="nonlicensed", use_container_width=True):
+        st.markdown("""
+            <div class="project-card" onclick="document.getElementById('nonlicensed_btn').click()">
+                <div class="project-title">📋 Non-Licensed</div>
+                <div class="project-info">Review non-licensed FIDO items</div>
+                <div class="project-info">Click to start reviewing</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Enter", key="nonlicensed_btn", use_container_width=True):
             navigate_to('nonlicensed')
     
     with col2:
-        if st.button("📜\n\nLicensed\nFIDO Review", key="licensed", use_container_width=True):
+        st.markdown("""
+            <div class="project-card" onclick="document.getElementById('licensed_btn').click()">
+                <div class="project-title">📜 Licensed</div>
+                <div class="project-info">Review licensed FIDO items</div>
+                <div class="project-info">Click to start reviewing</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Enter", key="licensed_btn", use_container_width=True):
             navigate_to('licensed')
     
     with col3:
-        if st.button("🔍\n\nCATQ", key="catq", use_container_width=True):
+        st.markdown("""
+            <div class="project-card" onclick="document.getElementById('catq_btn').click()">
+                <div class="project-title">🔍 CATQ</div>
+                <div class="project-info">Category Quality Review</div>
+                <div class="project-info">Click to start reviewing</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Enter", key="catq_btn", use_container_width=True):
             navigate_to('catq')
     
-    # Admin upload button
+    # Admin section
     if st.session_state.current_user['role'] == "Admin":
-        st.markdown("<br>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col2:
-            if st.button("📤 Upload New Project", type="primary", key="upload"):
+        st.markdown("### 🛠️ Admin Tools")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if st.button("📤 Upload Project", type="primary", use_container_width=True):
                 navigate_to('upload')
-
-def handle_file_upload(uploaded_file, queue_type, project_title):
-    if uploaded_file is not None:
-        try:
-            df = pd.read_csv(uploaded_file)
-            current_time = datetime.now()
-            
-            # Add metadata columns including uploader
-            df['upload_date'] = current_time.strftime("%Y-%m-%d")
-            df['status'] = 'Pending Review'
-            df['uploader'] = st.session_state.current_user['name']  # Add uploader
-            df['reviewer'] = ''
-            df['review_date'] = ''
-            df['comments'] = ''
-            
-            formatted_date = current_time.strftime('%Y%m%d_%H%M%S')
-            file_key = f"{queue_type}_{project_title}_{formatted_date}"
-            
-            # Update session state without clearing existing files
-            st.session_state.uploaded_files[file_key] = df
-            save_session_state()  # Save after upload
-            return True
-            
-        except Exception as e:
-            st.error(f"Error uploading file: {str(e)}")
-            return False
-    return False
-
-# Function to display the admin page
-def show_admin_page():
-    if st.session_state.current_user and st.session_state.current_user['role'] == "Admin":
-        show_back_button('admin')  # Add admin prefix
-        st.header("Admin Page")
         
-        tab1, tab2 = st.tabs(["Upload Files", "Review Status"])
+        with col2:
+            if st.button("👥 Admin Panel", type="secondary", use_container_width=True):
+                navigate_to('admin')
         
-        with tab1:
-            st.subheader("Upload New Files")
-            queue_type = st.selectbox("Select Queue:", ["Non-licensed", "Licensed", "CATQ"])
-            uploaded_file = st.file_uploader("Upload CSV File:", type="csv")
-            
-            if st.button("Upload Project"):
-                if uploaded_file is not None:
-                    if handle_file_upload(uploaded_file, queue_type.lower()):
-                        st.success(f"File uploaded successfully to {queue_type} queue")
-                else:
-                    st.error("Please select a file to upload")
-        
-        with tab2:
-            st.subheader("Review Status")
-            for file_key, df in st.session_state.uploaded_files.items():
-                queue, filename, _ = file_key.split('_', 2)
-                with st.expander(f"{filename} ({queue})"):
-                    st.dataframe(df)
-                    reviewed = len(df[df['status'] == 'Reviewed'])
-                    total = len(df)
-                    st.progress(reviewed / total)
-                    st.text(f"Progress: {reviewed}/{total} records reviewed")
-                    
-                    # Download button for reviewed data
-                    if reviewed > 0:
-                        csv = df.to_csv(index=False).encode('utf-8')
-                        st.download_button(
-                            label="⬇️ Download Reviewed Data",
-                            data=csv,
-                            file_name=f"Reviewed_{filename}",
-                            mime="text/csv"
-                        )
-    else:
-        st.error("Access denied. Admins only.")
+        with col3:
+            if st.button("📈 Analytics", type="secondary", use_container_width=True):
+                navigate_to('analytics')
 
-def show_reviewer_page(prefix, show_back=True):
-    """Show the reviewer interface"""
-    queue_type = prefix.split('_')[0]
-    queue_files = {k: v for k in st.session_state.uploaded_files.keys() 
-                  if k.startswith(queue_type)}
-    
-    if not queue_files:
-        st.info(f"No files available for review in {queue_type} queue")
-        return
-    
-    # Add tabs for reviewing and downloading
-    tab1, tab2 = st.tabs(["Review FIDOs", "Download Reviewed"])
-    
-    with tab1:
-        selected_file = st.selectbox(
-            "Select file to review:",
-            options=list(queue_files.keys()),
-            format_func=lambda x: x.split('_')[1],
-            key=f"select_{prefix}"
-        )
-        
-        if selected_file:
-            df = queue_files[selected_file]
-            pending_reviews = df[df['status'] == 'Pending Review']
-            
-            # Add save all button in sidebar
-            with st.sidebar:
-                st.markdown("### 🛠️ Controls")
-                if st.button("💾 Save All Reviews", key=f"save_all_{prefix}"):
-                    st.session_state.uploaded_files[selected_file] = df
-                    st.success("✅ All changes saved")
-                    st.rerun()
-            
-            if not pending_reviews.empty:
-                st.subheader("Records Pending Review")
-                for idx, row in pending_reviews.iterrows():
-                    st.markdown(f"### FIDO: {row.get('FIDO', f'Record {idx + 1}')}")
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.text(f"UPC: {row.get('BARCODE', 'N/A')}")
-                        st.text(f"Brand ID: {row.get('BRAND_ID', 'N/A')}")
-                        st.text(f"Original Brand: {row.get('BRAND', 'N/A')}")
-                    with col2:
-                        st.text(f"Category: {row.get('CATEGORY', 'N/A')}")
-                        st.text(f"Description: {row.get('DESCRIPTION', 'N/A')}")
-                    
-                    # Edit fields with unique keys
-                    df.at[idx, 'updated_description'] = st.text_area(
-                        "📝 Updated Description", 
-                        value=row.get('updated_description', row.get('DESCRIPTION', '')),
-                        key=f"desc_{prefix}_{idx}"
-                    )
-                    df.at[idx, 'updated_category'] = st.text_input(
-                        "📦 Updated Category",
-                        value=row.get('updated_category', row.get('CATEGORY', '')),
-                        key=f"cat_{prefix}_{idx}"
-                    )
-                    df.at[idx, 'updated_brand'] = st.text_input(
-                        "🏷️ Updated Brand",
-                        value=row.get('updated_brand', row.get('BRAND', '')),
-                        key=f"brand_{prefix}_{idx}"
-                    )
-                    df.at[idx, 'no_change'] = st.checkbox(
-                        "✅ No Change Required",
-                        value=row.get('no_change', False),
-                        key=f"nochange_{prefix}_{idx}"
-                    )
-                    df.at[idx, 'comments'] = st.text_input(
-                        "🗒️ Comments",
-                        value=row.get('comments', ''),
-                        key=f"comment_{prefix}_{idx}"
-                    )
-                    
-                    if st.button("Submit Review", key=f"submit_{prefix}_{idx}"):
-                        df.at[idx, 'status'] = 'Reviewed'
-                        df.at[idx, 'reviewer'] = st.session_state.current_user['name']
-                        df.at[idx, 'review_date'] = datetime.now().strftime("%Y-%m-%d")
-                        st.session_state.uploaded_files[selected_file] = df
-                        save_session_state()
-                        st.success(f"✅ Review submitted by {st.session_state.current_user['name']}")
-                        st.rerun()
-                    
-                    st.markdown("---")  # Add separator between records
-            else:
-                st.success("All records in this file have been reviewed!")
-    
-    with tab2:
-        st.subheader("Download Reviewed FIDOs")
-        for file_key, df in queue_files.items():
-            reviewed_df = df[df['status'] == 'Reviewed'].copy()
-            if not reviewed_df.empty:
-                filename = file_key.split('_')[1]
-                st.markdown(f"#### {filename}")
-                
-                # Prepare download data in original format
-                download_df = reviewed_df[['FIDO', 'BARCODE', 'BRAND_ID', 'updated_brand', 
-                                         'updated_category', 'updated_description', 
-                                         'comments', 'reviewer', 'review_date']]
-                download_df.columns = ['FIDO', 'BARCODE', 'BRAND_ID', 'BRAND', 
-                                     'CATEGORY', 'DESCRIPTION', 
-                                     'REVIEW_COMMENTS', 'REVIEWER', 'REVIEW_DATE']
-                
-                csv = download_df.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label=f"⬇️ Download {filename} Reviews",
-                    data=csv,
-                    file_name=f"Reviewed_{filename}",
-                    mime="text/csv",
-                    key=f"download_{file_key}"
-                )
-                
-                # Show preview
-                st.dataframe(download_df)
+def show_overview_page():
+    show_back_button('overview')
+    st.header("📊 Project Overview Dashboard")
 
-def show_queue_page(queue_type):
-    """Show the review interface for selected project"""
-    if not st.session_state.selected_project:
-        show_project_selection_page(queue_type)
-        return
-    
-    # Add back button here
-    show_back_button(queue_type)
-    st.header(f"Reviewing: {st.session_state.selected_project}")
-    
-    # Show reviewer page without its own back button
-    show_reviewer_page(f"{queue_type}_review", show_back=False)
-
-def show_queue_landing_page(queue_type):
-    """Show the landing page for a specific queue"""
-    show_back_button(f"landing_{queue_type}")
-    st.header(f"{queue_type.title()} Projects")
-    
-    # Filter files for this queue type
-    queue_files = {k: v for k in st.session_state.uploaded_files.keys() 
-                  if k.startswith(queue_type)}
-    
-    if queue_type == "nonlicensed":
-        # Get unique project names
-        project_files = [k.split('_')[1] for k in queue_files.keys()]
-        unique_projects = sorted(set(project_files)) if project_files else ["No projects available"]
-        
-        # Project selection dropdown
-        project_category = st.selectbox(
-            "Select Project:",
-            options=unique_projects,
-            key=f"project_select_{queue_type}"
-        )
-        
-        if project_category != "No projects available":
-            # Filter files for selected project
-            displayed_files = {k: v for k in queue_files.keys() 
-                            if k.split('_')[1] == project_category}
-            st.subheader(f"📋 {project_category} Files")
-            
-            # Add admin controls
-            if st.session_state.current_user['role'] == "Admin":
-                with st.expander("🛠️ Admin Controls"):
-                    if st.button("🗑️ Remove Project", key=f"remove_{project_category}"):
-                        if st.session_state.current_user['role'] == "Admin":
-                            # Remove all files for this project
-                            keys_to_remove = [k for k in st.session_state.uploaded_files.keys() 
-                                            if k.split('_')[1] == project_category]
-                            for key in keys_to_remove:
-                                del st.session_state.uploaded_files[key]
-                            st.success(f"Project '{project_category}' removed successfully")
-                            st.rerun()
-                        else:
-                            st.error("Only admins can remove projects")
-        else:
-            displayed_files = {}
-    else:
-        displayed_files = queue_files
-        st.subheader("📋 Available Projects")
-    
-    if not displayed_files:
-        st.info(f"No files available in selected category")
-        return
-
-    # Display project cards
-    cols = st.columns(2)
-    for idx, (file_key, df) in enumerate(displayed_files.items()):
+    # Gather all projects
+    all_projects = []
+    for file_key, df in st.session_state.uploaded_files.items():
         parts = file_key.split('_')
+        queue_type = parts[0]
         project_name = parts[1]
         date_str = parts[-1][:8]
         formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
-        
+        uploader = df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown"
+        priority = df['priority'].iloc[0] if 'priority' in df.columns else "medium"
         total_records = len(df)
         reviewed = len(df[df['status'] == 'Reviewed'])
-        
-        with cols[idx % 2]:
-            st.markdown(f"""
-                <div class="project-card">
-                    <div class="project-title">{project_name}</div>
-                    <div class="project-info">Upload Date: {formatted_date}</div>
-                    <div class="project-info">Progress: {reviewed}/{total_records} records reviewed</div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            progress = reviewed/total_records if total_records > 0 else 0
-            st.progress(progress)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("📄 Review", key=f"review_{file_key}"):
-                    st.session_state.selected_project = file_key
-                    navigate_to(f"{queue_type}_review")
-            with col2:
-                # Add download button for each file
-                csv = df.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="⬇️ Download",
-                    data=csv,
-                    file_name=f"{project_name}_{formatted_date}.csv",
-                    mime="text/csv",
-                    key=f"download_{file_key}"
-                )
+        gmv = df['GMV'].sum() if 'GMV' in df.columns else 0
 
-def show_upload_section(queue_type):
-    st.subheader("📤 Upload New Project")
-    
-    # Get project title
-    project_title = st.text_input(
-        "Project Title:",
-        key=f"title_{queue_type}_queue",
-        placeholder="Enter a descriptive title for this project"
-    )
-    
-    uploaded_file = st.file_uploader(
-        "Upload CSV File:", 
-        type="csv",
-        key=f"upload_{queue_type}_queue"
-    )
-    
-    if st.button("Upload Project", key=f"upload_button_{queue_type}_queue"):
-        if uploaded_file is not None and project_title:
-            # Use project title instead of filename
-            if handle_file_upload(uploaded_file, queue_type, project_title):
-                st.success(f"File uploaded successfully to {queue_type} queue")
-                st.rerun()
-        else:
-            st.error("Please provide both a project title and select a file")
+        all_projects.append({
+            "queue_type": queue_type,
+            "project_name": project_name,
+            "date": formatted_date,
+            "uploader": uploader,
+            "priority": priority,
+            "total": total_records,
+            "reviewed": reviewed,
+            "progress": (reviewed / total_records * 100) if total_records > 0 else 0,
+            "gmv": gmv,
+            "file_key": file_key
+        })
 
-def show_upload_page():
-    """Dedicated upload page for admins"""
-    if st.session_state.current_user['role'] != "Admin":
-        st.error("Access denied. Admins only.")
+    if not all_projects:
+        st.info("🚀 No projects uploaded yet. Start by uploading your first project!")
         return
-    
-    show_back_button('upload')
-    st.header("📤 Upload New Project")
-    
-    # Create tabs for upload and overview
-    upload_tab, overview_tab = st.tabs(["Upload New Project", "Project Overview"])
-    
-    with upload_tab:
-        col1, col2 = st.columns([2, 1])
-        
-        with col1:
-            uploaded_file = st.file_uploader(
-                "Upload CSV File:", 
-                type="csv",
-                key="admin_upload"
-            )
-        
-        with col2:
-            st.markdown('<div style="color: white;">Project Type</div>', 
-                       unsafe_allow_html=True)
-            queue_type = st.radio(
-                "Select queue:",
-                ["Non-licensed", "Licensed"],
-                horizontal=False,
-                label_visibility="collapsed"
-            )
-            
-            st.markdown('<div style="color: white;">Priority Level</div>', 
-                       unsafe_allow_html=True)
-            priority = st.select_slider(
-                "Select priority:",
-                options=["Low Priority", "Medium Priority", "High Priority"],
-                value="Medium Priority",
-                label_visibility="collapsed"
-            )
-        
-        if uploaded_file:
-            project_title = uploaded_file.name.rsplit('.', 1)[0]
-            st.success("✅ File loaded successfully!")
-            st.info(f"Project Title: {project_title}")
-            
-            if st.button("Upload Project", type="primary"):
-                queue_mapping = {
-                    "Non-licensed": "nonlicensed",
-                    "Licensed": "licensed"
-                }
-                mapped_queue = queue_mapping[queue_type]
-                # Add priority to project title
-                project_title = f"{project_title}_{priority.split()[0].lower()}"
-                
-                if handle_file_upload(uploaded_file, mapped_queue, project_title):
-                    st.success(f"✅ Project '{project_title}' uploaded successfully to {queue_type} queue")
-                    time.sleep(2)
-                    st.rerun()
-    
-    # Rest of the overview tab code remains the same...
-    with overview_tab:
-        st.subheader("Current Projects")
-        
-        # Group projects by queue type
-        for queue_type in ["nonlicensed", "licensed"]:
-            # Fix the dictionary comprehension
-            queue_files = {k: st.session_state.uploaded_files[k] for k in st.session_state.uploaded_files.keys() 
-                         if k.startswith(queue_type)}
-            
-            if queue_files:
-                st.markdown(f"### {queue_type.title()} Projects")
-                
-                for file_key, df in queue_files.items():
-                    parts = file_key.split('_')
-                    project_name = parts[1]
-                    date_str = parts[-1][:8]
-                    formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
-                    
-                    total_records = len(df)
-                    reviewed = len(df[df['status'] == 'Reviewed'])
-                    
-                    # Create expandable section for each project
-                    with st.expander(f"📁 {project_name}"):
-                        col1, col2 = st.columns([3, 1])
-                        
-                        with col1:
-                            st.text(f"Upload Date: {formatted_date}")
-                            st.text(f"Progress: {reviewed}/{total_records} records reviewed")
-                            st.progress(reviewed/total_records if total_records > 0 else 0)
-                        
-                        with col2:
-                            # Add remove button
-                            if st.button("🗑️ Remove", key=f"remove_{file_key}"):
-                                del st.session_state.uploaded_files[file_key]
-                                st.success(f"Removed {project_name}")
-                                st.rerun()
-                            
-                            # Add download button
-                            csv = df.to_csv(index=False).encode('utf-8')
-                            st.download_button(
-                                label="⬇️ Download",
-                                data=csv,
-                                file_name=f"{project_name}_{formatted_date}.csv",
-                                mime="text/csv",
-                                key=f"download_{file_key}"
-                            )
-            else:
-                st.info(f"No {queue_type.title()} projects uploaded yet")
 
-def show_project_selection_page(queue_type):
-    """Show project selection menu page"""
-    show_back_button(f"selection_{queue_type}")
-    st.header(f"{queue_type.title()} Projects")
+    # Summary statistics
+    total_gmv = sum(p['gmv'] for p in all_projects)
+    total_projects = len(all_projects)
+    total_records = sum(p['total'] for p in all_projects)
+    total_reviewed = sum(p['reviewed'] for p in all_projects)
+    avg_progress = (total_reviewed / total_records * 100) if total_records > 0 else 0
+
+    # Stats cards
+    col1, col2, col3, col4 = st.columns(4)
     
-    # Filter files for this queue type
-    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
-                  if k.startswith(queue_type)}
+    with col1:
+        st.markdown(f"""
+            <div class="stats-card">
+                <div class="stats-number">{total_projects}</div>
+                <div class="stats-label">Total Projects</div>
+            </div>
+        """, unsafe_allow_html=True)
     
-    if not queue_files:
-        st.info(f"No projects available in {queue_type} queue")
-        return
+    with col2:
+        st.markdown(f"""
+            <div class="stats-card">
+                <div class="stats-number">${total_gmv:,.0f}</div>
+                <div class="stats-label">Total GMV</div>
+            </div>
+        """, unsafe_allow_html=True)
     
-    # Get unique project names and their statistics
-    project_stats = {}
-    unique_projects = sorted(set(k.split('_')[1] for k in queue_files.keys()))
+    with col3:
+        st.markdown(f"""
+            <div class="stats-card">
+                <div class="stats-number">{total_records:,}</div>
+                <div class="stats-label">Total Records</div>
+            </div>
+        """, unsafe_allow_html=True)
     
-    # Priority mapping
+    with col4:
+        st.markdown(f"""
+            <div class="stats-card">
+                <div class="stats-number">{avg_progress:.1f}%</div>
+                <div class="stats-label">Avg Progress</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    
+    # Project grid
+    st.subheader("📋 All Projects")
+    
+    priority_colors = {
+        'high': '#ef4444',
+        'medium': '#f59e0b', 
+        'low': '#10b981'
+    }
+    
     priority_map = {
         'high': 'High Priority',
         'medium': 'Medium Priority',
         'low': 'Low Priority'
     }
     
-    for project_name in unique_projects:
-        project_files = {k: v for k, v in queue_files.items() 
-                        if k.split('_')[1] == project_name}
-        total_records = sum(len(df) for df in project_files.values())
-        reviewed = sum(len(df[df['status'] == 'Reviewed']) for df in project_files.values())
+    cols = st.columns(2)
+    for idx, proj in enumerate(all_projects):
+        priority_color = priority_colors.get(str(proj['priority']).lower(), '#6b7280')
         
-        # Extract priority from project name and map to display value
-        priority_key = project_name.split('_')[-1].lower()
-        priority = priority_map.get(priority_key, 'Unknown Priority')
-        
-        project_stats[project_name] = {
-            'total': total_records,
-            'reviewed': reviewed,
-            'priority': priority,
-            'progress': (reviewed/total_records * 100) if total_records > 0 else 0
-        }
-    # Create two columns for selection and statistics
-    col1, col2 = st.columns([1, 2])
-    
-    with col1:
-        st.subheader("Select Project")
-        selected_project = st.selectbox(
-            "Choose a project:",
-            options=list(project_stats.keys()),
-            format_func=lambda x: x.rsplit('_', 1)[0]  # Remove priority from display name
-        )
-    
-    with col2:
-        if selected_project:
-            st.subheader("Project Statistics")
-            stats = project_stats[selected_project]
-            
-            # Get uploader name from the first file of the project
-            project_files = {k: v for k, v in queue_files.items() 
-                           if k.split('_')[1] == selected_project}
-            first_file = next(iter(project_files.values()))
-            uploader = first_file['uploader'].iloc[0]
-            
-            # Display statistics with uploader info
+        with cols[idx % 2]:
             st.markdown(f"""
-                <div style='padding: 1rem; background-color: #1e3d59; border-radius: 0.5rem; color: white;'>
-                    <h3>{selected_project.rsplit('_', 1)[0]}</h3>
-                    <p>Uploaded by: {uploader}</p>
-                    <p>Priority Level: {stats['priority']}</p>
-                    <p>Total Records: {stats['total']}</p>
-                    <p>Reviewed: {stats['reviewed']}</p>
-                    <p>Progress: {stats['progress']:.1f}%</p>
+                <div class="modern-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: #1f2937;">{proj['project_name']}</h4>
+                        <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">
+                            {priority_map.get(str(proj['priority']).lower(), proj['priority'])}
+                        </span>
+                    </div>
+                    <div style="color: #6b7280; margin-bottom: 1rem;">
+                        <p style="margin: 0.25rem 0;"><strong>Queue:</strong> {proj['queue_type'].title()}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Upload Date:</strong> {proj['date']}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Uploader:</strong> {proj['uploader']}</p>
+                        <p style="margin: 0.25rem 0;"><strong>GMV:</strong> ${proj['gmv']:,.2f}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Progress:</strong> {proj['reviewed']}/{proj['total']} ({proj['progress']:.1f}%)</p>
+                    </div>
                 </div>
             """, unsafe_allow_html=True)
             
-            st.progress(stats['progress']/100)
+            # Progress bar
+            st.progress(proj['progress'] / 100)
             
-            if st.button("Begin Review", type="primary"):
-                st.session_state.selected_project = selected_project
-                navigate_to(f"{queue_type}_review")
+            # Action button
+            if st.button(f"🔍 Review Project", key=f"review_btn_{proj['file_key']}", use_container_width=True):
+                st.session_state.selected_project = proj['file_key']
+                navigate_to(f"{proj['queue_type']}_review")
 
-    # Add admin controls if user is admin
-    if st.session_state.current_user['role'] == "Admin":
-        st.markdown("---")
-        with st.expander("🛠️ Admin Controls"):
-            for project_name in unique_projects:  # Now unique_projects is defined
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.markdown(f"**{project_name}**")
-                with col2:
-                    if st.button("🗑️ Remove", key=f"remove_{project_name}"):
-                        keys_to_remove = [k for k in st.session_state.uploaded_files.keys() 
-                                        if k.split('_')[1] == project_name]
-                        for key in keys_to_remove:
-                            del st.session_state.uploaded_files[key]
-                        st.success(f"Removed project: {project_name}")
-                        st.rerun()
+def handle_file_upload(uploaded_file, queue_type, project_title, priority="medium"):
+    if uploaded_file is not None:
+        try:
+            df = pd.read_csv(uploaded_file)
+            current_time = datetime.now()
+            
+            # Add metadata columns
+            df['upload_date'] = current_time.strftime("%Y-%m-%d")
+            df['status'] = 'Pending Review'
+            df['uploader'] = st.session_state.current_user['name']
+            df['reviewer'] = ''
+            df['review_date'] = ''
+            df['comments'] = ''
+            df['priority'] = priority
+            
+            # Handle GMV
+            if 'GMV' not in df.columns:
+                df['GMV'] = 0
 
-# Main page routing logic
+            formatted_date = current_time.strftime('%Y%m%d_%H%M%S')
+            file_key = f"{queue_type}_{project_title}_{priority}_{formatted_date}"
+            
+            st.session_state.uploaded_files[file_key] = df
+            save_session_state()
+            return True
+        except Exception as e:
+            st.error(f"Error uploading file: {str(e)}")
+            return False
+    return False
+
+def show_upload_page():
+    if st.session_state.current_user['role'] != "Admin":
+        st.error("🚫 Access denied. Admins only.")
+        return
+    
+    show_back_button('upload')
+    st.header("📤 Upload New Project")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
+        st.subheader("📁 Project Details")
+        
+        project_title = st.text_input(
+            "📝 Project Title:",
+            placeholder="Enter a descriptive project title"
+        )
+        
+        uploaded_file = st.file_uploader(
+            "📄 Upload CSV File:",
+            type="csv",
+            help="Select a CSV file containing FIDO data"
+        )
+        
+        if uploaded_file:
+            st.success("✅ File loaded successfully!")
+            # Show file preview
+            try:
+                preview_df = pd.read_csv(uploaded_file)
+                st.markdown("**File Preview:**")
+                st.dataframe(preview_df.head(), use_container_width=True)
+            except:
+                st.warning("Could not preview file")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
+        st.subheader("⚙️ Settings")
+        
+        queue_type = st.selectbox(
+            "📋 Queue Type:",
+            ["Non-licensed", "Licensed", "CATQ"],
+            help="Select the appropriate queue for this project"
+        )
+        
+        priority = st.select_slider(
+            "🎯 Priority Level:",
+            options=["low", "medium", "high"],
+            value="medium",
+            format_func=lambda x: f"{'🟢' if x=='low' else '🟡' if x=='medium' else '🔴'} {x.title()} Priority"
+        )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Upload button
+        if st.button("🚀 Upload Project", type="primary", use_container_width=True):
+            if uploaded_file and project_title:
+                queue_mapping = {
+                    "Non-licensed": "nonlicensed",
+                    "Licensed": "licensed", 
+                    "CATQ": "catq"
+                }
+                
+                if handle_file_upload(uploaded_file, queue_mapping[queue_type], project_title, priority):
+                    st.success(f"🎉 Project '{project_title}' uploaded successfully!")
+                    time.sleep(2)
+                    st.rerun()
+            else:
+                st.error("❌ Please provide both project title and file")
+
+def show_project_selection_page(queue_type):
+    show_back_button(f"selection_{queue_type}")
+    st.header(f"📂 {queue_type.title()} Projects")
+    
+    # Filter files for this queue type
+    queue_files = {k: v for k, v in st.session_state.uploaded_files.items() 
+                  if k.startswith(queue_type)}
+    
+    if not queue_files:
+        st.info(f"📭 No projects available in {queue_type} queue")
+        if st.session_state.current_user['role'] == "Admin":
+            if st.button("📤 Upload First Project", type="primary"):
+                navigate_to('upload')
+        return
+    
+    # Group by project
+    projects = {}
+    for k, df in queue_files.items():
+        parts = k.split('_')
+        project_name = parts[1]
+        priority = parts[2] if len(parts) > 3 else 'medium'
+        
+        if project_name not in projects:
+            projects[project_name] = {
+                'files': [],
+                'priority': priority,
+                'total': 0,
+                'reviewed': 0,
+                'gmv': 0,
+                'uploader': df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown"
+            }
+        
+        projects[project_name]['files'].append((k, df))
+        projects[project_name]['total'] += len(df)
+        projects[project_name]['reviewed'] += len(df[df['status'] == 'Reviewed'])
+        projects[project_name]['gmv'] += df['GMV'].sum() if 'GMV' in df.columns else 0
+
+    # Display projects in modern cards
+    cols = st.columns(2)
+    priority_colors = {'high': '#ef4444', 'medium': '#f59e0b', 'low': '#10b981'}
+    
+    for idx, (project_name, data) in enumerate(projects.items()):
+        progress = (data['reviewed'] / data['total'] * 100) if data['total'] > 0 else 0
+        priority_color = priority_colors.get(data['priority'], '#6b7280')
+        
+        with cols[idx % 2]:
+            st.markdown(f"""
+                <div class="modern-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0;">{project_name}</h4>
+                        <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem;">
+                            {data['priority'].title()}
+                        </span>
+                    </div>
+                    <div style="color: #6b7280; margin-bottom: 1rem;">
+                        <p style="margin: 0.25rem 0;">👤 <strong>Uploader:</strong> {data['uploader']}</p>
+                        <p style="margin: 0.25rem 0;">💰 <strong>GMV:</strong> ${data['gmv']:,.2f}</p>
+                        <p style="margin: 0.25rem 0;">📊 <strong>Progress:</strong> {data['reviewed']}/{data['total']} ({progress:.1f}%)</p>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            st.progress(progress / 100)
+            
+            col_a, col_b = st.columns(2)
+            with col_a:
+                if st.button("🔍 Review", key=f"review_{project_name}", use_container_width=True):
+                    st.session_state.selected_project = data['files'][0][0]  # First file key
+                    navigate_to(f"{queue_type}_review")
+            
+            with col_b:
+                # Download option
+                first_file = data['files'][0][1]
+                csv = first_file.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    "📥 Download",
+                    data=csv,
+                    file_name=f"{project_name}.csv",
+                    mime="text/csv",
+                    key=f"download_{project_name}",
+                    use_container_width=True
+                )
+
+# Simplified reviewer interface
+def show_reviewer_page(queue_type):
+    if not st.session_state.selected_project:
+        show_project_selection_page(queue_type)
+        return
+    
+    show_back_button(queue_type)
+    
+    # Get project data
+    file_key = st.session_state.selected_project
+    df = st.session_state.uploaded_files[file_key]
+    project_name = file_key.split('_')[1]
+    
+    st.header(f"🔍 Reviewing: {project_name}")
+    
+    # Progress indicator
+    pending = df[df['status'] == 'Pending Review']
+    reviewed = len(df[df['status'] == 'Reviewed'])
+    total = len(df)
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Records", total)
+    with col2:
+        st.metric("Reviewed", reviewed)
+    with col3:
+        st.metric("Remaining", len(pending))
+    
+    st.progress(reviewed / total if total > 0 else 0)
+    
+    if not pending.empty:
+        # Show first pending record
+        idx = pending.index[0]
+        row = pending.iloc[0]
+        
+        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
+        st.subheader(f"📝 FIDO: {row.get('FIDO', f'Record {idx + 1}')}")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.text(f"UPC: {row.get('BARCODE', 'N/A')}")
+            st.text(f"Brand ID: {row.get('BRAND_ID', 'N/A')}")
+            st.text(f"Original Brand: {row.get('BRAND', 'N/A')}")
+        with col2:
+            st.text(f"Category: {row.get('CATEGORY', 'N/A')}")
+            st.text(f"Description: {row.get('DESCRIPTION', 'N/A')}")
+        
+        # Edit fields
+        updated_desc = st.text_area(
+            "📝 Updated Description",
+            value=row.get('DESCRIPTION', ''),
+            key=f"desc_{idx}"
+        )
+        
+        updated_cat = st.text_input(
+            "📦 Updated Category",
+            value=row.get('CATEGORY', ''),
+            key=f"cat_{idx}"
+        )
+        
+        updated_brand = st.text_input(
+            "🏷️ Updated Brand",
+            value=row.get('BRAND', ''),
+            key=f"brand_{idx}"
+        )
+        
+        no_change = st.checkbox("✅ No Change Required", key=f"nochange_{idx}")
+        comments = st.text_input("💬 Comments", key=f"comment_{idx}")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("✅ Submit Review", type="primary", use_container_width=True):
+                df.at[idx, 'updated_description'] = updated_desc
+                df.at[idx, 'updated_category'] = updated_cat
+                df.at[idx, 'updated_brand'] = updated_brand
+                df.at[idx, 'no_change'] = no_change
+                df.at[idx, 'comments'] = comments
+                df.at[idx, 'status'] = 'Reviewed'
+                df.at[idx, 'reviewer'] = st.session_state.current_user['name']
+                df.at[idx, 'review_date'] = datetime.now().strftime("%Y-%m-%d")
+                
+                st.session_state.uploaded_files[file_key] = df
+                save_session_state()
+                st.success("✅ Review submitted!")
+                time.sleep(1)
+                st.rerun()
+        
+        with col2:
+            if st.button("⏭️ Skip for Now", use_container_width=True):
+                st.info("Record skipped")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.success("🎉 All records have been reviewed!")
+        if st.button("📥 Download Results", type="primary"):
+            csv = df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                "Download Reviewed Data",
+                data=csv,
+                file_name=f"Reviewed_{project_name}.csv",
+                mime="text/csv"
+            )
+
+# Main routing
 current_page = get_current_page()
 
 if st.session_state.current_user:
-    if current_page == 'admin':
-        show_admin_page()
+    if current_page == 'main':
+        show_main_page()
+    elif current_page == 'overview':
+        show_overview_page()
     elif current_page == 'upload':
         show_upload_page()
-    elif current_page == 'main':
-        show_main_page()
     elif current_page in ['nonlicensed', 'licensed', 'catq']:
         show_project_selection_page(current_page)
     elif current_page.endswith('_review'):
-        show_queue_page(current_page.split('_')[0])
+        show_reviewer_page(current_page.split('_')[0])
 else:
     show_login_panel()
