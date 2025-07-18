@@ -426,10 +426,11 @@ st.markdown("""
     }
     
     .status-pending {
-        background: #fef3c7;
-        color: #92400e;
+        background: #fbbf24;
+        color: #1f2937;
         border: 1px solid #f59e0b;
         font-weight: 600;
+        box-shadow: 0 2px 4px rgba(251, 191, 36, 0.3);
     }
     
     .status-reviewed {
