@@ -579,6 +579,54 @@ st.markdown("""
         }
     }
     
+    // Copy to clipboard function with fallback
+    function copyToClipboard(path, description) {
+        const fullUrl = window.location.origin + window.location.pathname + path;
+        
+        // Try modern clipboard API first
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(fullUrl).then(() => {
+                alert(`✅ Link copied to clipboard for ${description}!`);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                fallbackCopyTextToClipboard(fullUrl, description);
+            });
+        } else {
+            // Fallback for older browsers or non-secure contexts
+            fallbackCopyTextToClipboard(fullUrl, description);
+        }
+    }
+    
+    // Fallback copy function
+    function fallbackCopyTextToClipboard(text, description) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        
+        // Avoid scrolling to bottom
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                alert(`✅ Link copied to clipboard for ${description}!`);
+            } else {
+                alert(`❌ Failed to copy link. Please copy manually: ${text}`);
+            }
+        } catch (err) {
+            console.error('Fallback copy failed: ', err);
+            alert(`❌ Copy failed. Please copy manually: ${text}`);
+        }
+        
+        document.body.removeChild(textArea);
+    }
+    
     // Initialize theme on page load
     document.addEventListener('DOMContentLoaded', function() {
         const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -1542,7 +1590,7 @@ def show_reviewer_page(queue_type):
             <div class="fido-card" id="fido-{fido_id}">
                 <div class="fido-header">
                     <h4 class="fido-title">📝 FIDO: {fido_id}</h4>
-                    <div class="share-link" onclick="navigator.clipboard.writeText(window.location.origin + window.location.pathname + '{share_url}'); alert('Link copied to clipboard!')">
+                    <div class="share-link" onclick="copyToClipboard('{share_url}', 'FIDO {fido_id}')">
                         🔗 Share
                     </div>
                 </div>
@@ -1611,19 +1659,48 @@ def show_reviewer_page(queue_type):
                         use_container_width=True
                     ):
                         # Update the dataframe
-                        row_index = df.index[df.get('FIDO', df.index) == fido_id].tolist()
-                        if not row_index:
-                            row_index = [df.index[idx]]
-                        
-                        actual_idx = row_index[0]
-                        df.at[actual_idx, 'updated_description'] = updated_desc
-                        df.at[actual_idx, 'updated_category'] = updated_cat
-                        df.at[actual_idx, 'updated_brand'] = updated_brand
-                        df.at[actual_idx, 'no_change'] = no_change
-                        df.at[actual_idx, 'comments'] = comments
-                        df.at[actual_idx, 'status'] = 'Reviewed'
-                        df.at[actual_idx, 'reviewer'] = st.session_state.current_user['name']
-                        df.at[actual_idx, 'review_date'] = datetime.now().strftime("%Y-%m-%d")
+                        try:
+                            # Find the correct row index
+                            if 'FIDO' in df.columns:
+                                row_mask = df['FIDO'] == fido_id
+                                matching_rows = df[row_mask]
+                                if not matching_rows.empty:
+                                    actual_idx = matching_rows.index[0]
+                                else:
+                                    # Fallback to using the enumeration index
+                                    actual_idx = df.index[idx]
+                            else:
+                                actual_idx = df.index[idx]
+                            
+                            # Debug: Show what we're updating
+                            st.info(f"🔧 Updating row {actual_idx} for FIDO {fido_id}")
+                            st.info(f"📝 New Category: '{updated_cat}'")
+                            st.info(f"📝 New Description: '{updated_desc[:50]}...'")
+                            st.info(f"🏷️ New Brand: '{updated_brand}'")
+                            
+                            # Update the original columns with new values
+                            df.at[actual_idx, 'DESCRIPTION'] = updated_desc
+                            df.at[actual_idx, 'CATEGORY'] = updated_cat
+                            df.at[actual_idx, 'BRAND'] = updated_brand
+                            
+                            # Also store in updated columns for tracking changes
+                            df.at[actual_idx, 'updated_description'] = updated_desc
+                            df.at[actual_idx, 'updated_category'] = updated_cat
+                            df.at[actual_idx, 'updated_brand'] = updated_brand
+                            df.at[actual_idx, 'no_change'] = no_change
+                            df.at[actual_idx, 'comments'] = comments
+                            df.at[actual_idx, 'status'] = 'Reviewed'
+                            df.at[actual_idx, 'reviewer'] = st.session_state.current_user['name']
+                            df.at[actual_idx, 'review_date'] = datetime.now().strftime("%Y-%m-%d")
+                            
+                            # Verify the update worked
+                            updated_row = df.loc[actual_idx]
+                            st.success(f"✅ Verified update - Category is now: '{updated_row['CATEGORY']}'")
+                            
+                        except Exception as e:
+                            st.error(f"❌ Error updating row: {e}")
+                            st.error(f"Debug info - FIDO: {fido_id}, Index: {idx}")
+                            continue
                         
                         st.session_state.uploaded_files[file_key] = df
                         save_session_state()
