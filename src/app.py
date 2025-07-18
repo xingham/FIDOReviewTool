@@ -897,7 +897,7 @@ def show_main_page():
                      help="Navigate to CATQ projects"):
             navigate_to('catq')
     
-    # Custom CSS to style the card buttons
+    # Custom CSS to style the card buttons to match project cards
     st.markdown("""
         <style>
         /* Style the card buttons to look like the project cards */
@@ -912,13 +912,15 @@ def show_main_page():
             margin-bottom: 1.5rem !important;
             transition: all 0.3s ease !important;
             cursor: pointer !important;
-            min-height: 150px !important;
+            min-height: 180px !important;
             font-size: 1rem !important;
             font-weight: 500 !important;
-            line-height: 1.4 !important;
+            line-height: 1.5 !important;
             text-align: center !important;
             white-space: pre-line !important;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+            backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
         }
         
         button[data-testid*="card_nonlicensed"]:hover,
@@ -928,7 +930,7 @@ def show_main_page():
             box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3) !important;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             color: white !important;
-            border: none !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
         }
         
         button[data-testid*="card_nonlicensed"]:focus,
@@ -937,9 +939,22 @@ def show_main_page():
             box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4) !important;
             transform: translateY(-3px) !important;
             outline: none !important;
-            border: none !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             color: white !important;
+        }
+        
+        /* Override any conflicting button styles */
+        div[data-testid="column"] button[data-testid*="card_"] {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+        
+        div[data-testid="column"] button[data-testid*="card_"]:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
         }
         </style>
     """, unsafe_allow_html=True)
