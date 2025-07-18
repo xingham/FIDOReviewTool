@@ -2429,12 +2429,32 @@ def show_reviewer_page(queue_type):
                 
                 col1, col2 = st.columns(2)
                 
-                # Pre-populate with existing updated values if available
-                current_updated_desc = row.get('updated_description', row.get('DESCRIPTION', ''))
-                current_updated_cat = row.get('updated_category', get_relevant_category(row.get('CATEGORY', '')))
-                current_updated_brand = row.get('updated_brand', row.get('BRAND', ''))
+                # Pre-populate with existing updated values if available, handle NaN/None values
+                current_updated_desc = row.get('updated_description', '')
+                if pd.isna(current_updated_desc) or current_updated_desc == 'nan':
+                    current_updated_desc = row.get('DESCRIPTION', '')
+                    if pd.isna(current_updated_desc) or current_updated_desc == 'nan':
+                        current_updated_desc = ''
+                
+                current_updated_cat = row.get('updated_category', '')
+                if pd.isna(current_updated_cat) or current_updated_cat == 'nan':
+                    current_updated_cat = get_relevant_category(row.get('CATEGORY', ''))
+                    if pd.isna(current_updated_cat) or current_updated_cat == 'nan':
+                        current_updated_cat = ''
+                
+                current_updated_brand = row.get('updated_brand', '')
+                if pd.isna(current_updated_brand) or current_updated_brand == 'nan':
+                    current_updated_brand = row.get('BRAND', '')
+                    if pd.isna(current_updated_brand) or current_updated_brand == 'nan':
+                        current_updated_brand = ''
+                
                 current_comments = row.get('comments', '')
+                if pd.isna(current_comments) or current_comments == 'nan':
+                    current_comments = ''
+                
                 current_no_change = row.get('no_change', False)
+                if pd.isna(current_no_change):
+                    current_no_change = False
                 
                 with col1:
                     updated_desc = st.text_area(
@@ -2479,7 +2499,7 @@ def show_reviewer_page(queue_type):
                         key=f"submit_{idx}_{fido_id}",
                         use_container_width=True
                     ):
-                        # Validation: Check if changes were made OR "No Change Required" is checked
+                        # Check if user made changes to the data
                         original_desc = row.get('DESCRIPTION', '')
                         original_cat = get_relevant_category(row.get('CATEGORY', ''))
                         original_brand = row.get('BRAND', '')
@@ -2491,6 +2511,12 @@ def show_reviewer_page(queue_type):
                         
                         changes_made = desc_changed or cat_changed or brand_changed or has_comments
                         
+                        # Validation: Prevent conflicting selections
+                        if changes_made and no_change:
+                            st.error("❌ You cannot make changes to the FIDO data AND select 'No Change Required'. Please either make changes OR select 'No Change Required', but not both.")
+                            st.stop()
+                        
+                        # Validation: Must make changes OR select no change
                         if not changes_made and not no_change:
                             st.error("❌ Please make changes to the FIDO data OR check 'No Change Required' before submitting.")
                             st.stop()
