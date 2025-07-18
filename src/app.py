@@ -26,6 +26,21 @@ st.markdown("""
         min-height: 100vh;
     }
     
+    /* Base text sizing */
+    .stMarkdown p {
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+    
+    /* Metric styling */
+    .metric-container [data-testid="metric-container"] {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
     /* Main container */
     .main > div {
         padding: 2rem;
@@ -46,9 +61,19 @@ st.markdown("""
     h1 {
         color: #2c3e50;
         text-align: center;
-        font-size: 3rem;
-        margin-bottom: 2rem;
+        font-size: 2.2rem;
+        margin-bottom: 1.5rem;
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    h2 {
+        font-size: 1.8rem;
+        margin-bottom: 1.2rem;
+    }
+    
+    h3 {
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
     }
     
     /* Modern cards */
@@ -84,15 +109,15 @@ st.markdown("""
     }
     
     .project-title {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
         font-weight: 600;
-        margin-bottom: 1rem;
+        margin-bottom: 0.8rem;
     }
     
     .project-info {
-        font-size: 0.95rem;
+        font-size: 1rem;
         opacity: 0.9;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.4rem;
     }
     
     /* Stats cards */
@@ -107,7 +132,7 @@ st.markdown("""
     }
     
     .stats-number {
-        font-size: 2rem;
+        font-size: 1.8rem;
         font-weight: 700;
         color: #667eea;
         margin-bottom: 0.5rem;
@@ -115,7 +140,7 @@ st.markdown("""
     
     .stats-label {
         color: #64748b;
-        font-size: 0.9rem;
+        font-size: 1rem;
         font-weight: 500;
     }
     
@@ -168,10 +193,10 @@ st.markdown("""
     .stSelectbox > label,
     .stTextArea > label,
     .stRadio > label {
-        font-size: 1.3rem !important;
-        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
         color: white !important;
-        margin-bottom: 0.75rem !important;
+        margin-bottom: 0.5rem !important;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
     }
     
@@ -338,8 +363,8 @@ def show_login_panel():
     
     with col2:
         st.markdown('<div style="text-align: center; margin-top: 3rem;">', unsafe_allow_html=True)
-        st.markdown('<h2 style="color: white; font-size: 2.5rem; margin-bottom: 1rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);">🔐 Please Login to Continue</h2>', unsafe_allow_html=True)
-        st.markdown('<p style="color: rgba(255, 255, 255, 0.9); font-size: 1.2rem; margin-bottom: 2rem; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);">Enter your credentials to access the FIDO Review Tool</p>', unsafe_allow_html=True)
+        st.markdown('<h2 style="color: white; font-size: 2rem; margin-bottom: 1rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);">🔐 Please Login to Continue</h2>', unsafe_allow_html=True)
+        st.markdown('<p style="color: rgba(255, 255, 255, 0.9); font-size: 1.1rem; margin-bottom: 2rem; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);">Enter your credentials to access the FIDO Review Tool</p>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
         name = st.text_input("👤 Full Name:", placeholder="Enter your full name")
