@@ -873,76 +873,73 @@ def show_main_page():
     
     st.markdown("---")
     
-    # Modern dashboard cards
+    # Modern dashboard cards as buttons
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown("""
-            <div class="project-card" onclick="document.getElementById('nav_nonlicensed').click()">
-                <div class="project-title">📋 Non-Licensed</div>
-                <div class="project-info">Review non-licensed FIDO items</div>
-                <div class="project-info" style="margin-top: 1rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.2); border-radius: 8px; font-weight: 600; text-align: center;">
-                    Click here to start reviewing
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+        if st.button("📋 Non-Licensed\n\nReview non-licensed FIDO items\n\nClick here to start reviewing", 
+                     key="card_nonlicensed", 
+                     use_container_width=True,
+                     help="Navigate to Non-Licensed projects"):
+            navigate_to('nonlicensed')
     
     with col2:
-        st.markdown("""
-            <div class="project-card" onclick="document.getElementById('nav_licensed').click()">
-                <div class="project-title">📜 Licensed</div>
-                <div class="project-info">Review licensed FIDO items</div>
-                <div class="project-info" style="margin-top: 1rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.2); border-radius: 8px; font-weight: 600; text-align: center;">
-                    Click here to start reviewing
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+        if st.button("📜 Licensed\n\nReview licensed FIDO items\n\nClick here to start reviewing", 
+                     key="card_licensed", 
+                     use_container_width=True,
+                     help="Navigate to Licensed projects"):
+            navigate_to('licensed')
     
     with col3:
-        st.markdown("""
-            <div class="project-card" onclick="document.getElementById('nav_catq').click()">
-                <div class="project-title">🔍 CATQ</div>
-                <div class="project-info">Category Quality Review</div>
-                <div class="project-info" style="margin-top: 1rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.2); border-radius: 8px; font-weight: 600; text-align: center;">
-                    Click here to start reviewing
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+        if st.button("🔍 CATQ\n\nCategory Quality Review\n\nClick here to start reviewing", 
+                     key="card_catq", 
+                     use_container_width=True,
+                     help="Navigate to CATQ projects"):
+            navigate_to('catq')
     
-    # Hidden buttons positioned off-screen
-    st.markdown("""
-        <div style="position: absolute; left: -9999px; top: -9999px;">
-    """, unsafe_allow_html=True)
-    
-    # Hidden button that gets triggered by card click
-    if st.button("", key="nav_nonlicensed", help="Navigate to Non-Licensed"):
-        navigate_to('nonlicensed')
-    # Hidden button that gets triggered by card click
-    if st.button("", key="nav_licensed", help="Navigate to Licensed"):
-        navigate_to('licensed')
-    # Hidden button that gets triggered by card click
-    if st.button("", key="nav_catq", help="Navigate to CATQ"):
-        navigate_to('catq')
-    
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    # CSS to completely hide the navigation buttons
+    # Custom CSS to style the card buttons
     st.markdown("""
         <style>
-        button[data-testid*="nav_nonlicensed"],
-        button[data-testid*="nav_licensed"],
-        button[data-testid*="nav_catq"] {
-            position: absolute !important;
-            left: -9999px !important;
-            top: -9999px !important;
-            display: none !important;
-            visibility: hidden !important;
-            height: 0 !important;
-            width: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
+        /* Style the card buttons to look like the project cards */
+        button[data-testid*="card_nonlicensed"],
+        button[data-testid*="card_licensed"], 
+        button[data-testid*="card_catq"] {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             border: none !important;
-            opacity: 0 !important;
+            border-radius: 16px !important;
+            padding: 2rem !important;
+            color: white !important;
+            margin-bottom: 1.5rem !important;
+            transition: all 0.3s ease !important;
+            cursor: pointer !important;
+            min-height: 150px !important;
+            font-size: 1rem !important;
+            font-weight: 500 !important;
+            line-height: 1.4 !important;
+            text-align: center !important;
+            white-space: pre-line !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        button[data-testid*="card_nonlicensed"]:hover,
+        button[data-testid*="card_licensed"]:hover,
+        button[data-testid*="card_catq"]:hover {
+            transform: translateY(-5px) !important;
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3) !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            border: none !important;
+        }
+        
+        button[data-testid*="card_nonlicensed"]:focus,
+        button[data-testid*="card_licensed"]:focus,
+        button[data-testid*="card_catq"]:focus {
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4) !important;
+            transform: translateY(-3px) !important;
+            outline: none !important;
+            border: none !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
         }
         </style>
     """, unsafe_allow_html=True)
