@@ -1923,7 +1923,7 @@ def show_reviewer_page(queue_type):
                         <div class="fido-field"><strong>Category:</strong><span>{row.get('CATEGORY', 'N/A')}</span></div>
                         <div class="fido-field"><strong>Description:</strong><span>{row.get('DESCRIPTION', 'N/A')}</span></div>
                         <div class="fido-field"><strong>Status:</strong><span class="fido-status {status_class}">{row['status']}</span></div>
-                        {f'<div class="fido-field"><strong>Reviewer:</strong><span>{row.get("reviewer", "")}</span></div>' if row.get('reviewer') else ''}
+                        {('<div class="fido-field"><strong>Reviewer:</strong><span>' + str(row.get("reviewer", "")) + '</span></div>') if row.get('reviewer') else ''}
                     </div>
                 </div>
             </div>
