@@ -1067,28 +1067,7 @@ def show_overview_page():
         priority_color = priority_colors.get(str(proj['priority']).lower(), '#6b7280')
         
         with cols[idx % 2]:
-            st.markdown(f"""
-                <div class="modern-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h4 style="margin: 0; color: var(--text-primary); font-weight: 600;">{proj['project_name']}</h4>
-                        <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">
-                            {priority_map.get(str(proj['priority']).lower(), proj['priority'])}
-                        </span>
-                    </div>
-                    <div style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">
-                        <p style="margin: 0.25rem 0;"><strong>Queue:</strong> {proj['queue_type'].title()}</p>
-                        <p style="margin: 0.25rem 0;"><strong>Upload Date:</strong> {proj['date']}</p>
-                        <p style="margin: 0.25rem 0;"><strong>Uploader:</strong> {proj['uploader']}</p>
-                        <p style="margin: 0.25rem 0;"><strong>GMV:</strong> ${proj['gmv']:,.2f}</p>
-                        <p style="margin: 0.25rem 0;"><strong>Progress:</strong> {proj['reviewed']}/{proj['total']} ({proj['progress']:.1f}%)</p>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            # Progress bar
-            st.progress(proj['progress'] / 100)
-            
-            # Action buttons
+            # Action buttons at the top
             col_action1, col_action2 = st.columns(2)
             with col_action1:
                 if st.button(f"🔍 Review Project", key=f"review_btn_{proj['file_key']}", use_container_width=True):
@@ -1104,16 +1083,39 @@ def show_overview_page():
                             st.session_state[f"overview_confirm_delete_{proj['file_key']}"] = True
                             st.warning(f"⚠️ Delete '{proj['project_name']}'?")
                             st.rerun()
-                
-                # Handle confirmation for overview delete
-                if st.session_state.get(f"overview_confirm_delete_{proj['file_key']}", False):
-                    col_confirm1, col_confirm2 = st.columns([1, 1])
-                    with col_confirm1:
-                        if st.button("❌ Cancel", key=f"overview_cancel_{proj['file_key']}", use_container_width=True):
-                            del st.session_state[f"overview_confirm_delete_{proj['file_key']}"]
-                            st.rerun()
-                    with col_confirm2:
-                        if st.button("✅ Delete", key=f"overview_confirm_btn_{proj['file_key']}", type="primary", use_container_width=True):
+            
+            st.markdown(f"""
+                <div class="modern-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: var(--text-primary); font-weight: 600;">{proj['project_name']}</h4>
+                        <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">
+                            {priority_map.get(str(proj['priority']).lower(), proj['priority'])}
+                        </span>
+                    </div>
+                    <div style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">
+                        <p style="margin: 0.25rem 0;"><strong>Queue:</strong> {proj['queue_type'].title()}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Upload Date:</strong> {proj['date']}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Uploader:</strong> {proj['uploader']}</p>
+                        <p style="margin: 0.25rem 0;"><strong>GMV:</strong> ${proj['gmv']:,.2f}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Progress:</strong> {proj['reviewed']}/{proj['total']} ({proj['progress']:.1f}%)</p>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <div style="background-color: #e5e7eb; border-radius: 10px; height: 12px; border: 1px solid #d1d5db; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 100%; width: {proj['progress']}%; border-radius: 10px; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Handle confirmation for overview delete
+            if st.session_state.get(f"overview_confirm_delete_{proj['file_key']}", False):
+                col_confirm1, col_confirm2 = st.columns([1, 1])
+                with col_confirm1:
+                    if st.button("❌ Cancel", key=f"overview_cancel_{proj['file_key']}", use_container_width=True):
+                        del st.session_state[f"overview_confirm_delete_{proj['file_key']}"]
+                        st.rerun()
+                with col_confirm2:
+                    if st.button("✅ Delete", key=f"overview_confirm_btn_{proj['file_key']}", type="primary", use_container_width=True):
                             # Delete the file
                             if proj['file_key'] in st.session_state.uploaded_files:
                                 del st.session_state.uploaded_files[proj['file_key']]
@@ -1384,24 +1386,7 @@ def show_project_selection_page(queue_type):
         priority_color = priority_colors.get(data['priority'], '#6b7280')
         
         with cols[idx % 2]:
-            st.markdown(f"""
-                <div class="modern-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h4 style="margin: 0; color: var(--text-primary); font-weight: 600;">{project_name}</h4>
-                        <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem;">
-                            {data['priority'].title()}
-                        </span>
-                    </div>
-                    <div style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">
-                        <p style="margin: 0.25rem 0;">👤 <strong>Uploader:</strong> {data['uploader']}</p>
-                        <p style="margin: 0.25rem 0;">💰 <strong>GMV:</strong> ${data['gmv']:,.2f}</p>
-                        <p style="margin: 0.25rem 0;">📊 <strong>Progress:</strong> {data['reviewed']}/{data['total']} ({progress:.1f}%)</p>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            st.progress(progress / 100)
-            
+            # Action buttons at the top
             col_a, col_b = st.columns(2)
             with col_a:
                 if st.button("🔍 Review", key=f"review_{project_name}", use_container_width=True):
@@ -1421,26 +1406,45 @@ def show_project_selection_page(queue_type):
                     use_container_width=True
                 )
             
-            # Admin-only delete functionality
+            # Admin delete button (also at the top)
             if st.session_state.current_user['role'] == "Admin":
-                col_del1, col_del2 = st.columns([1, 1])
-                with col_del2:
-                    if st.button("🗑️ Delete Project", key=f"delete_{project_name}", type="secondary", use_container_width=True):
-                        # Show confirmation
-                        if f"confirm_delete_{project_name}" not in st.session_state:
-                            st.session_state[f"confirm_delete_{project_name}"] = True
-                            st.warning(f"⚠️ Are you sure you want to delete '{project_name}'? This action cannot be undone!")
-                            st.rerun()
-                
-                # Handle confirmation
-                if st.session_state.get(f"confirm_delete_{project_name}", False):
-                    col_confirm1, col_confirm2 = st.columns([1, 1])
-                    with col_confirm1:
-                        if st.button("❌ Cancel", key=f"cancel_delete_{project_name}", use_container_width=True):
-                            del st.session_state[f"confirm_delete_{project_name}"]
-                            st.rerun()
-                    with col_confirm2:
-                        if st.button("✅ Confirm Delete", key=f"confirm_delete_btn_{project_name}", type="primary", use_container_width=True):
+                if st.button("🗑️ Delete Project", key=f"delete_{project_name}", type="secondary", use_container_width=True):
+                    # Show confirmation
+                    if f"confirm_delete_{project_name}" not in st.session_state:
+                        st.session_state[f"confirm_delete_{project_name}"] = True
+                        st.warning(f"⚠️ Are you sure you want to delete '{project_name}'? This action cannot be undone!")
+                        st.rerun()
+            
+            st.markdown(f"""
+                <div class="modern-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: var(--text-primary); font-weight: 600;">{project_name}</h4>
+                        <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem;">
+                            {data['priority'].title()}
+                        </span>
+                    </div>
+                    <div style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">
+                        <p style="margin: 0.25rem 0;">👤 <strong>Uploader:</strong> {data['uploader']}</p>
+                        <p style="margin: 0.25rem 0;">💰 <strong>GMV:</strong> ${data['gmv']:,.2f}</p>
+                        <p style="margin: 0.25rem 0;">📊 <strong>Progress:</strong> {data['reviewed']}/{data['total']} ({progress:.1f}%)</p>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <div style="background-color: #e5e7eb; border-radius: 10px; height: 12px; border: 1px solid #d1d5db; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 100%; width: {progress}%; border-radius: 10px; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Handle confirmation
+            if st.session_state.get(f"confirm_delete_{project_name}", False):
+                col_confirm1, col_confirm2 = st.columns([1, 1])
+                with col_confirm1:
+                    if st.button("❌ Cancel", key=f"cancel_delete_{project_name}", use_container_width=True):
+                        del st.session_state[f"confirm_delete_{project_name}"]
+                        st.rerun()
+                with col_confirm2:
+                    if st.button("✅ Confirm Delete", key=f"confirm_delete_btn_{project_name}", type="primary", use_container_width=True):
                             # Delete all files for this project
                             files_to_delete = [file_key for file_key, _ in data['files']]
                             for file_key in files_to_delete:
