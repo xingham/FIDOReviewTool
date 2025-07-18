@@ -660,10 +660,12 @@ def get_gmv_sum(df):
     if gmv_col:
         try:
             # Convert to numeric, replacing non-numeric values with 0
-            return pd.to_numeric(df[gmv_col], errors='coerce').fillna(0).sum()
-        except:
-            return 0
-    return 0
+            numeric_series = pd.to_numeric(df[gmv_col], errors='coerce').fillna(0)
+            return float(numeric_series.sum())
+        except Exception as e:
+            print(f"Error calculating GMV sum: {e}")
+            return 0.0
+    return 0.0
 
 # Function to get GMV value from a row
 def get_gmv_value(row, df_columns=None):
@@ -676,18 +678,22 @@ def get_gmv_value(row, df_columns=None):
                 break
         if gmv_col:
             try:
-                return pd.to_numeric(row.get(gmv_col, 0), errors='coerce') or 0
-            except:
-                return 0
+                value = pd.to_numeric(row.get(gmv_col, 0), errors='coerce')
+                return float(value) if pd.notna(value) else 0.0
+            except Exception as e:
+                print(f"Error getting GMV value: {e}")
+                return 0.0
     
     # Fallback: check the row itself for GMV-related keys
     for key in row.index if hasattr(row, 'index') else []:
         if 'gmv' in str(key).lower():
             try:
-                return pd.to_numeric(row.get(key, 0), errors='coerce') or 0
-            except:
-                return 0
-    return 0
+                value = pd.to_numeric(row.get(key, 0), errors='coerce')
+                return float(value) if pd.notna(value) else 0.0
+            except Exception as e:
+                print(f"Error getting GMV value from key {key}: {e}")
+                return 0.0
+    return 0.0
 
 # Initialize session state
 if 'uploaded_files' not in st.session_state or not isinstance(st.session_state.uploaded_files, dict):
@@ -1087,10 +1093,21 @@ def handle_file_upload(uploaded_file, queue_type, project_title, priority="mediu
             gmv_col = find_gmv_column(df)
             if gmv_col and gmv_col != 'GMV':
                 # Copy the GMV column to standardized name and keep original
-                df['GMV'] = pd.to_numeric(df[gmv_col], errors='coerce').fillna(0)
+                try:
+                    df['GMV'] = pd.to_numeric(df[gmv_col], errors='coerce').fillna(0)
+                except Exception as e:
+                    print(f"Error processing GMV column {gmv_col}: {e}")
+                    df['GMV'] = 0.0
             elif not gmv_col:
                 # No GMV column found, create one with zeros
-                df['GMV'] = 0
+                df['GMV'] = 0.0
+            else:
+                # GMV column exists, ensure it's numeric
+                try:
+                    df['GMV'] = pd.to_numeric(df['GMV'], errors='coerce').fillna(0)
+                except Exception as e:
+                    print(f"Error processing existing GMV column: {e}")
+                    df['GMV'] = 0.0
 
             formatted_date = current_time.strftime('%Y%m%d_%H%M%S')
             file_key = f"{queue_type}_{project_title}_{priority}_{formatted_date}"
