@@ -52,7 +52,8 @@ st.markdown("""
     
     /* Modern cards */
     .modern-card {
-        background: white;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
         border-radius: 16px;
         padding: 2rem;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -95,7 +96,8 @@ st.markdown("""
     
     /* Stats cards */
     .stats-card {
-        background: white;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
         border-radius: 12px;
         padding: 1.5rem;
         text-align: center;
