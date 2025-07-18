@@ -886,9 +886,6 @@ def show_main_page():
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        # Hidden button that gets triggered by card click
-        if st.button("", key="nav_nonlicensed", help="Navigate to Non-Licensed"):
-            navigate_to('nonlicensed')
     
     with col2:
         st.markdown("""
@@ -900,9 +897,6 @@ def show_main_page():
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        # Hidden button that gets triggered by card click
-        if st.button("", key="nav_licensed", help="Navigate to Licensed"):
-            navigate_to('licensed')
     
     with col3:
         st.markdown("""
@@ -914,16 +908,33 @@ def show_main_page():
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        # Hidden button that gets triggered by card click
-        if st.button("", key="nav_catq", help="Navigate to CATQ"):
-            navigate_to('catq')
     
-    # CSS to hide the navigation buttons
+    # Hidden buttons positioned off-screen
+    st.markdown("""
+        <div style="position: absolute; left: -9999px; top: -9999px;">
+    """, unsafe_allow_html=True)
+    
+    # Hidden button that gets triggered by card click
+    if st.button("", key="nav_nonlicensed", help="Navigate to Non-Licensed"):
+        navigate_to('nonlicensed')
+    # Hidden button that gets triggered by card click
+    if st.button("", key="nav_licensed", help="Navigate to Licensed"):
+        navigate_to('licensed')
+    # Hidden button that gets triggered by card click
+    if st.button("", key="nav_catq", help="Navigate to CATQ"):
+        navigate_to('catq')
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    # CSS to completely hide the navigation buttons
     st.markdown("""
         <style>
         button[data-testid*="nav_nonlicensed"],
         button[data-testid*="nav_licensed"],
         button[data-testid*="nav_catq"] {
+            position: absolute !important;
+            left: -9999px !important;
+            top: -9999px !important;
             display: none !important;
             visibility: hidden !important;
             height: 0 !important;
@@ -931,6 +942,7 @@ def show_main_page():
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
+            opacity: 0 !important;
         }
         </style>
     """, unsafe_allow_html=True)
