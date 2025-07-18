@@ -844,7 +844,15 @@ def show_login_panel():
 
 # Function to display the main page
 def show_main_page():
-    show_back_button()
+    # Sign out button instead of back button for main page
+    col_signout, col_spacer = st.columns([1, 5])
+    with col_signout:
+        if st.button('🚪 Sign Out', key="signout_button"):
+            st.session_state.current_user = None
+            st.session_state.page_history = ['login']
+            st.success("👋 Signed out successfully!")
+            time.sleep(1)
+            st.rerun()
     
     # Welcome message with user info
     col1, col2 = st.columns([3, 1])
