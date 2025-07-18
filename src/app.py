@@ -672,7 +672,6 @@ st.markdown("""
 # Add file storage constants
 STORAGE_DIR = "data"
 STORAGE_FILE = os.path.join(STORAGE_DIR, "uploaded_files.pkl")
-DEBUG_MODE = True  # Enable debugging to track disappearing projects
 
 # Create storage directory if it doesn't exist
 if not os.path.exists(STORAGE_DIR):
@@ -692,9 +691,6 @@ def save_session_state():
             import shutil
             shutil.copy2(STORAGE_FILE, backup_file)
         
-        if DEBUG_MODE:
-            st.info(f"🔧 Debug: Saving {len(st.session_state.uploaded_files)} projects to disk")
-        
         with open(STORAGE_FILE, 'wb') as f:
             pickle.dump(st.session_state.uploaded_files, f)
         
@@ -705,8 +701,6 @@ def save_session_state():
                 test_data = pickle.load(f)
                 if not isinstance(test_data, dict):
                     raise ValueError("Saved data is not a dictionary")
-                if DEBUG_MODE:
-                    st.success(f"✅ Debug: Successfully saved and verified {len(test_data)} projects")
         
     except Exception as e:
         st.error(f"❌ Error saving session state: {e}")
@@ -725,8 +719,6 @@ def load_session_state():
             with open(STORAGE_FILE, 'rb') as f:
                 data = pickle.load(f)
                 if isinstance(data, dict):
-                    if DEBUG_MODE:
-                        st.info(f"🔧 Debug: Loaded {len(data)} projects from disk")
                     return data
                 else:
                     st.warning("⚠️ Invalid data format in storage file")
@@ -741,15 +733,10 @@ def load_session_state():
                         data = pickle.load(f)
                         if isinstance(data, dict):
                             st.warning("⚠️ Loaded from backup due to corrupted main file")
-                            if DEBUG_MODE:
-                                st.info(f"🔧 Debug: Loaded {len(data)} projects from backup")
                             return data
                 except Exception:
                     pass
             return {}
-    else:
-        if DEBUG_MODE:
-            st.info("🔧 Debug: No storage file found, starting with empty projects")
     return {}
 
 # Function to refresh session state from disk (for real-time updates)
@@ -758,11 +745,6 @@ def refresh_session_state():
     try:
         latest_data = load_session_state()
         if isinstance(latest_data, dict):
-            if DEBUG_MODE:
-                before_count = len(st.session_state.uploaded_files)
-                after_count = len(latest_data)
-                if before_count != after_count:
-                    st.warning(f"🔧 Debug: Project count changed during refresh: {before_count} → {after_count}")
             st.session_state.uploaded_files = latest_data
         else:
             st.warning("⚠️ Could not refresh session state - invalid data format")
@@ -1100,24 +1082,6 @@ def show_main_page():
         with col3:
             if st.button("📈 Analytics", type="secondary", use_container_width=True):
                 navigate_to('analytics')
-        
-        # Debug controls
-        st.markdown("### 🔧 Debug Controls")
-        col_debug1, col_debug2 = st.columns(2)
-        with col_debug1:
-            global DEBUG_MODE
-            debug_toggle = st.checkbox("Enable Debug Mode", value=DEBUG_MODE)
-            if debug_toggle != DEBUG_MODE:
-                DEBUG_MODE = debug_toggle
-                st.rerun()
-        
-        with col_debug2:
-            if st.button("🔍 Show Storage Info"):
-                st.info(f"**Projects in memory:** {len(st.session_state.uploaded_files)}")
-                st.info(f"**Storage file:** {STORAGE_FILE}")
-                st.info(f"**File exists:** {os.path.exists(STORAGE_FILE)}")
-                if os.path.exists(STORAGE_FILE):
-                    st.info(f"**File size:** {os.path.getsize(STORAGE_FILE)} bytes")
 
 def show_overview_page():
     show_back_button('overview')
@@ -1127,30 +1091,9 @@ def show_overview_page():
     refresh_session_state()
     
     # Add refresh button
-    col_refresh, col_debug = st.columns([1, 1])
-    with col_refresh:
-        if st.button("🔄 Refresh Data", help="Refresh to see latest changes from all users"):
-            refresh_session_state()
-            st.rerun()
-    
-    with col_debug:
-        if st.button("🐛 Debug Info", help="Show debug information about stored projects"):
-            st.info(f"**Total projects in memory:** {len(st.session_state.uploaded_files)}")
-            st.info(f"**Storage file exists:** {os.path.exists(STORAGE_FILE)}")
-            if os.path.exists(STORAGE_FILE):
-                file_size = os.path.getsize(STORAGE_FILE)
-                st.info(f"**Storage file size:** {file_size} bytes")
-            
-            with st.expander("📋 Project Keys in Memory"):
-                for i, key in enumerate(st.session_state.uploaded_files.keys()):
-                    st.write(f"{i+1}. {key}")
-            
-            # Try loading from disk directly
-            try:
-                disk_data = load_session_state()
-                st.info(f"**Projects on disk:** {len(disk_data) if isinstance(disk_data, dict) else 0}")
-            except Exception as e:
-                st.error(f"**Error reading from disk:** {e}")
+    if st.button("🔄 Refresh Data", help="Refresh to see latest changes from all users"):
+        refresh_session_state()
+        st.rerun()
 
     # Gather all projects - visible to ALL users
     all_projects = []
