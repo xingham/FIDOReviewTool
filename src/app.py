@@ -146,19 +146,38 @@ st.markdown("""
     
     /* Buttons */
     .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
+        background: rgba(255, 255, 255, 0.9) !important;
+        color: #667eea !important;
+        border: 2px solid rgba(255, 255, 255, 0.3) !important;
         border-radius: 12px;
         padding: 0.75rem 2rem;
-        font-weight: 500;
+        font-weight: 600;
         transition: all 0.3s ease;
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
     }
     
     .stButton > button:hover {
+        background: rgba(255, 255, 255, 1) !important;
+        color: #667eea !important;
         transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 255, 255, 0.5) !important;
+    }
+    
+    /* Primary buttons (Login, Upload, etc.) */
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+        color: white !important;
+        border: none !important;
+        font-weight: 600;
+    }
+    
+    .stButton > button[kind="primary"]:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+        color: white !important;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
     }
     
     /* Sidebar */
