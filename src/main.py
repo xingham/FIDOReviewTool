@@ -1475,92 +1475,92 @@ def show_upload_page():
             else:
                 st.error("❌ Please provide both project title and file")
 
-def show_project_selection_page(queue_type):
-    show_back_button(f"selection_{queue_type}")
-    st.header(f"📂 {queue_type.title()} Projects")
-    
+def show_analytics_page():
+    if st.session_state.current_user['role'] != "Admin":
+        st.error("🚫 Access denied. Admins only.")
+        return
+        
+    show_back_button('analytics')
+    st.header("📈 Analytics Dashboard")
+
     # Refresh data to ensure we see latest changes from all users
     refresh_session_state()
     
-    # Add refresh button and search bar for manual updates
-    col_refresh, col_search, col_info = st.columns([1, 2, 2])
-    with col_refresh:
-        if st.button("🔄 Refresh", help="Refresh to see latest changes from all users"):
-            refresh_session_state()
-            st.rerun()
+    # Add refresh button
+    if st.button("🔄 Refresh Data", help="Refresh to see latest analytics data"):
+        refresh_session_state()
+        st.rerun()
+
+    # Collect all project data for analytics
+    all_projects = []
+    detailed_analytics = []
     
-    with col_search:
-        search_query = st.text_input(
-            "🔍 Search Projects",
-            placeholder="Search by project name...",
-            key=f"project_search_{queue_type}",
-            help="Filter projects by name"
-        )
-    
-    # Add info about project visibility and category filtering
-    with col_info:
-        if st.session_state.current_user['role'] == "Admin":
-            st.info(f"👑 **Admin View**: Only {queue_type} projects are shown here. Projects appear only in their designated category.")
-        else:
-            st.info(f"👀 **Reviewer View**: Only {queue_type} projects are shown here. All users can see projects regardless of uploader.")
-    
-    # Filter files for this queue type - show ALL projects to ALL users
-    # Fixed: Only show projects that exactly match the queue type (category)
-    queue_files = {}
-    for k, v in st.session_state.uploaded_files.items():
-        parts = k.split('_')
-        if len(parts) > 0 and parts[0] == queue_type:
-            queue_files[k] = v
-    
-    if not queue_files:
-        st.info(f"📭 No projects available in {queue_type} queue")
-        if st.session_state.current_user['role'] == "Admin":
-            if st.button("📤 Upload First Project", type="primary"):
-                navigate_to('upload')
-        return
-    
-    # Group by project
-    projects = {}
-    for k, df in queue_files.items():
-        parts = k.split('_')
+    for file_key, df in st.session_state.uploaded_files.items():
+        parts = file_key.split('_')
+        if len(parts) < 2:
+            continue
+            
+        queue_type = parts[0]
         project_name = parts[1]
-        priority = parts[2] if len(parts) > 3 else 'medium'
+        uploader = df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown"
         
-        # Extract date from file key as fallback
-        date_str = parts[-1].split('_')[0] if '_' in parts[-1] and len(parts[-1].split('_')[0]) == 8 else "00000000"
-        try:
-            if len(date_str) == 8 and date_str.isdigit():
-                fallback_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
-            else:
-                fallback_date = "Unknown"
-        except (ValueError, IndexError):
-            fallback_date = "Unknown"
+        # Basic project stats
+        total_records = len(df)
+        reviewed = len(df[df['status'] == 'Reviewed'])
+        gmv = get_gmv_sum(df)
         
-        # Use actual upload_date from dataframe if available, otherwise use fallback
-        if 'upload_date' in df.columns and not df['upload_date'].empty:
-            formatted_date = df['upload_date'].iloc[0]
-        else:
-            formatted_date = fallback_date
+        # Advanced FIDO Analytics for reviewed items only
+        reviewed_df = df[df['status'] == 'Reviewed']
+        total_reviewed = len(reviewed_df)
         
-        # Ensure claim columns exist
-        if 'claimed_by' not in df.columns:
-            df['claimed_by'] = ''
-        if 'claimed_date' not in df.columns:
-            df['claimed_date'] = ''
-        if 'project_status' not in df.columns:
-            df['project_status'] = 'Available'
-        
-        if project_name not in projects:
-            projects[project_name] = {
-                'files': [],
-                'priority': priority,
-                'total': 0,
-                'reviewed': 0,
-                'gmv': 0,
-                'uploader': df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown",
-                'date': formatted_date,
-                'claimed_by': df['claimed_by'].iloc[0] if 'claimed_by' in df.columns and not df['claimed_by'].iloc[0] == '' else None,
-                'claimed_date': df['claimed_date'].iloc[0] if 'claimed_date' in df.columns and not df['claimed_date'].iloc[0] == '' else None,
+        if total_reviewed > 0:
+            # GMV calculations
+            beginning_gmv = get_gmv_sum(reviewed_df)  # Total GMV of reviewed FIDOs
+            
+            # Calculate various update counts
+            total_updated = 0
+            category_only_updated = 0
+            brand_only_updated = 0
+            both_updated = 0
+            no_updates = 0
+            description_updated = 0
+            
+            # GMV breakdowns
+            category_only_gmv = 0
+            brand_only_gmv = 0
+            both_updated_gmv = 0
+            no_updates_gmv = 0
+            
+            # Special movements
+            brand_id_null_moved = 0
+            false_positive_moved = 0
+            
+            for _, row in reviewed_df.iterrows():
+                row_gmv = get_gmv_value(row, list(reviewed_df.columns))
+                
+                # Check if category was updated
+                category_changed = (str(row.get('CATEGORY', '')) != str(row.get('updated_category', '')))
+                
+                # Check if brand was updated
+                brand_changed = (str(row.get('BRAND', '')) != str(row.get('updated_brand', '')))
+                
+                # Check if description was updated
+                desc_changed = (str(row.get('DESCRIPTION', '')) != str(row.get('updated_description', '')))
+                
+                # Check if marked as no change
+                no_change = row.get('no_change', False)
+                
+                # Count updates
+                if not no_change and (category_changed or brand_changed or desc_changed):
+                    total_updated += 1
+                
+                if desc_changed:
+                    description_updated += 1
+                
+                # Categorize update types
+                if category_changed and brand_changed:
+                    both_updated += 1
+                    both_updated_gmv += row_gmv
                 'project_status': df['project_status'].iloc[0] if 'project_status' in df.columns else 'Available'
             }
         
