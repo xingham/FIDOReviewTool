@@ -499,82 +499,8 @@ st.markdown("""
     
     /* Mobile responsiveness */
     @media (max-width: 768px) {
-        .main > div {
-            margin: 0.5rem;
-            padding: 1rem;
-        }
-        
-        h1 {
-            font-size: 2rem;
-        }
-        
-        .project-card {
-            padding: 1.5rem;
-        }
-    }
-    </style>
-    
-    <!-- Theme Toggle Script -->
-    <div class="theme-toggle" onclick="toggleTheme()">
-        <span id="theme-icon">🌙</span>
-        <span id="theme-text">Dark</span>
-    </div>
-    
-    <script>
-    function toggleTheme() {
-        const body = document.body;
-        const currentTheme = body.getAttribute('data-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        const icon = document.getElementById('theme-icon');
-        const text = document.getElementById('theme-text');
-        
-        body.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        
-        if (newTheme === 'light') {
-            icon.textContent = '🌞';
-            text.textContent = 'Light';
-        } else {
-            icon.textContent = '🌙';
-            text.textContent = 'Dark';
-        }
-    }
-    
-    // Handle navigation from clickable cards
-    window.addEventListener('message', function(event) {
-        if (event.data.type === 'navigate') {
-            // Map page names to button keys
-            const buttonMap = {
-                'nonlicensed': 'nav_nonlicensed',
-                'licensed': 'nav_licensed', 
-                'catq': 'nav_catq'
-            };
-            
-            const targetButton = buttonMap[event.data.page];
-            if (targetButton) {
-                // Find button by data-testid or key
-                const buttons = document.querySelectorAll('button');
-                buttons.forEach(button => {
-                    const testId = button.getAttribute('data-testid');
-                    if (testId && testId.includes(targetButton)) {
-                        button.click();
-                        return;
-                    }
-                });
-            }
-        }
-    });
-    
-    // Alternative: direct navigation using Streamlit's JavaScript API
-    function navigateToPage(page) {
-        const buttonMap = {
-            'nonlicensed': 'nav_nonlicensed',
-            'licensed': 'nav_licensed', 
-            'catq': 'nav_catq'
-        };
-        
-        const targetButton = buttonMap[page];
         if (targetButton) {
+
             // Try to find and click the button
             setTimeout(() => {
                 const buttons = document.querySelectorAll('button');
@@ -866,6 +792,26 @@ def main():
         st.warning(f"Unknown page: {page}")
 
 main()
+
+# --- PLACEHOLDER FUNCTIONS TO PREVENT BLANK APP ---
+import streamlit as st
+import time
+
+def show_login_panel():
+    st.header("🔐 Login Panel (Placeholder)")
+    st.info("This is a placeholder for the login panel. Please implement your login logic.")
+
+def navigate_to(page_name):
+    if 'page_history' not in st.session_state:
+        st.session_state.page_history = []
+    st.session_state.page_history.append(page_name)
+    st.rerun()
+
+def show_back_button(page_name):
+    if st.button("⬅️ Back", key=f"back_{page_name}"):
+        if 'page_history' in st.session_state and len(st.session_state.page_history) > 1:
+            st.session_state.page_history.pop()
+            st.rerun()
 
 # Function to display the main page
 def show_main_page():
@@ -1475,131 +1421,7 @@ def show_analytics_page():
             brand_id_null_moved = 0
             false_positive_moved = 0
             
-            for _, row in reviewed_df.iterrows():
-                row_gmv = get_gmv_value(row, list(reviewed_df.columns))
-                
-                # Check if category was updated
-                category_changed = (str(row.get('CATEGORY', '')) != str(row.get('updated_category', '')))
-                
-                # Check if brand was updated
-                brand_changed = (str(row.get('BRAND', '')) != str(row.get('updated_brand', '')))
-                
-                # Check if description was updated
-                desc_changed = (str(row.get('DESCRIPTION', '')) != str(row.get('updated_description', '')))
-                
-                # Check if marked as no change
-                no_change = row.get('no_change', False)
-                
-                # Count updates
-                if not no_change and (category_changed or brand_changed or desc_changed):
-                    total_updated += 1
-                
-                if desc_changed:
-                    description_updated += 1
-                
-                # Categorize update types
-                if category_changed and brand_changed:
-                    both_updated += 1
-                    both_updated_gmv += row_gmv
-                'project_status': df['project_status'].iloc[0] if 'project_status' in df.columns else 'Available'
-            }
-        
-        projects[project_name]['files'].append((k, df))
-        projects[project_name]['total'] += len(df)
-        projects[project_name]['reviewed'] += len(df[df['status'] == 'Reviewed'])
-        projects[project_name]['gmv'] += get_gmv_sum(df)
 
-    # Display projects in modern cards
-    cols = st.columns(2)
-    priority_colors = {'high': '#ef4444', 'medium': '#f59e0b', 'low': '#10b981'}
-    
-    # Sort projects by priority (high -> medium -> low)
-    priority_order = {'high': 3, 'medium': 2, 'low': 1}
-    sorted_projects = sorted(projects.items(), key=lambda x: priority_order.get(x[1]['priority'], 0), reverse=True)
-    
-    # Apply search filter if search query is provided
-    if search_query:
-        filtered_projects = []
-        for project_name, data in sorted_projects:
-            if search_query.lower() in project_name.lower():
-                filtered_projects.append((project_name, data))
-        sorted_projects = filtered_projects
-    
-    # Show search results info
-    if search_query:
-        if sorted_projects:
-            st.success(f"🔍 Found {len(sorted_projects)} project(s) matching '{search_query}'")
-        else:
-            st.warning(f"❌ No projects found matching '{search_query}'. Try a different search term.")
-            return
-    
-    for idx, (project_name, data) in enumerate(sorted_projects):
-        progress = (data['reviewed'] / data['total'] * 100) if data['total'] > 0 else 0
-        priority_color = priority_colors.get(data['priority'], '#6b7280')
-        
-        # Determine project status display
-        status_info = ""
-        if data.get('claimed_by'):
-            claimed_date = data.get('claimed_date', 'Unknown')
-            status_info = f"<p style='margin: 0.25rem 0;'><strong>🎯 Reviewing:</strong> {data['claimed_by']} (claimed {claimed_date})</p>"
-        else:
-            status_info = "<p style='margin: 0.25rem 0;'><strong>📌 Status:</strong> Available for review</p>"
-        
-        with cols[idx % 2]:
-            st.markdown(f"""
-                <div class="modern-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h4 style="margin: 0; color: var(--text-primary); font-weight: 600;">{project_name}</h4>
-                        <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">
-                            {data['priority'].title()}
-                        </span>
-                    </div>
-                    <div style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">
-                        <p style="margin: 0.25rem 0;"><strong>Queue:</strong> {queue_type.title()}</p>
-                        <p style="margin: 0.25rem 0;"><strong>Upload Date:</strong> {data['date']}</p>
-                        <p style="margin: 0.25rem 0;"><strong>Uploader:</strong> {data['uploader']}</p>
-                        {status_info}
-                        <p style="margin: 0.25rem 0;"><strong>GMV:</strong> ${data['gmv']:,.2f}</p>
-                        <p style="margin: 0.25rem 0;"><strong>Progress:</strong> {data['reviewed']}/{data['total']} ({progress:.1f}%)</p>
-                    </div>
-                    <div style="margin-top: 1rem; margin-bottom: 1rem;">
-                        <div style="background-color: #e5e7eb; border-radius: 10px; height: 12px; border: 1px solid #d1d5db; overflow: hidden;">
-                            <div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 100%; width: {progress}%; border-radius: 10px; transition: width 0.3s ease;"></div>
-                        </div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            # Action buttons inside the card area (but outside the HTML since Streamlit buttons need to be separate)
-            col_action1, col_action2 = st.columns(2)
-            
-            with col_action1:
-                if st.button("� Review", key=f"review_{project_name}", use_container_width=True):
-                    # Automatically claim the project when reviewing
-                    current_date = datetime.now().strftime("%Y-%m-%d")
-                    for file_key, df in data['files']:
-                        df['claimed_by'] = st.session_state.current_user['name']
-                        df['claimed_date'] = current_date
-                        df['project_status'] = 'Claimed'
-                        st.session_state.uploaded_files[file_key] = df
-                    save_session_state()
-                    refresh_session_state()
-                    
-                    st.session_state.selected_project = data['files'][0][0]  # First file key
-                    navigate_to(f"{queue_type}_review")
-            
-            with col_action2:
-                # Download option
-                first_file = data['files'][0][1]
-                csv = first_file.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    "📥 Download",
-                    data=csv,
-                    file_name=f"{project_name}.csv",
-                    mime="text/csv",
-                    key=f"download_{project_name}",
-                    use_container_width=True
-                )
             
             # Admin delete button (also inside the card)
             if st.session_state.current_user['role'] == "Admin":
@@ -1620,7 +1442,6 @@ def show_analytics_page():
                 with col_confirm2:
                     if st.button("✅ Delete", key=f"confirm_btn_{project_name}", type="primary", use_container_width=True):
                         # Delete all files for this project
-                        for file_key, _ in data['files']:
                             if file_key in st.session_state.uploaded_files:
                                 del st.session_state.uploaded_files[file_key]
                         
@@ -2235,7 +2056,6 @@ def show_analytics_page():
 # Enhanced reviewer interface showing all FIDOs
 def show_reviewer_page(queue_type):
     if not st.session_state.selected_project:
-        show_project_selection_page(queue_type)
         return
     
     show_back_button('reviewer')
@@ -2660,20 +2480,3 @@ def show_reviewer_page(queue_type):
             )
 
 # Main routing
-current_page = get_current_page()
-
-if st.session_state.current_user:
-    if current_page == 'main':
-        show_main_page()
-    elif current_page == 'overview':
-        show_overview_page()
-    elif current_page == 'upload':
-        show_upload_page()
-    elif current_page == 'analytics':
-        show_analytics_page()
-    elif current_page in ['nonlicensed', 'licensed', 'catq']:
-        show_project_selection_page(current_page)
-    elif current_page.endswith('_review'):
-        show_reviewer_page(current_page.split('_')[0])
-else:
-    show_login_panel()
