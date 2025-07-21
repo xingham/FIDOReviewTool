@@ -499,8 +499,82 @@ st.markdown("""
     
     /* Mobile responsiveness */
     @media (max-width: 768px) {
+        .main > div {
+            margin: 0.5rem;
+            padding: 1rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+        }
+        
+        .project-card {
+            padding: 1.5rem;
+        }
+    }
+    </style>
+    
+    <!-- Theme Toggle Script -->
+    <div class="theme-toggle" onclick="toggleTheme()">
+        <span id="theme-icon">🌙</span>
+        <span id="theme-text">Dark</span>
+    </div>
+    
+    <script>
+    function toggleTheme() {
+        const body = document.body;
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        const icon = document.getElementById('theme-icon');
+        const text = document.getElementById('theme-text');
+        
+        body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        
+        if (newTheme === 'light') {
+            icon.textContent = '🌞';
+            text.textContent = 'Light';
+        } else {
+            icon.textContent = '🌙';
+            text.textContent = 'Dark';
+        }
+    }
+    
+    // Handle navigation from clickable cards
+    window.addEventListener('message', function(event) {
+        if (event.data.type === 'navigate') {
+            // Map page names to button keys
+            const buttonMap = {
+                'nonlicensed': 'nav_nonlicensed',
+                'licensed': 'nav_licensed', 
+                'catq': 'nav_catq'
+            };
+            
+            const targetButton = buttonMap[event.data.page];
+            if (targetButton) {
+                // Find button by data-testid or key
+                const buttons = document.querySelectorAll('button');
+                buttons.forEach(button => {
+                    const testId = button.getAttribute('data-testid');
+                    if (testId && testId.includes(targetButton)) {
+                        button.click();
+                        return;
+                    }
+                });
+            }
+        }
+    });
+    
+    // Alternative: direct navigation using Streamlit's JavaScript API
+    function navigateToPage(page) {
+        const buttonMap = {
+            'nonlicensed': 'nav_nonlicensed',
+            'licensed': 'nav_licensed', 
+            'catq': 'nav_catq'
+        };
+        
+        const targetButton = buttonMap[page];
         if (targetButton) {
-
             // Try to find and click the button
             setTimeout(() => {
                 const buttons = document.querySelectorAll('button');
@@ -760,12 +834,38 @@ def get_relevant_category(category_hierarchy):
         # If no ">" found, return the original category
         return category_str
 
+# Initialize session state
 if 'uploaded_files' not in st.session_state:
     st.session_state.uploaded_files = load_session_state()
     if not isinstance(st.session_state.uploaded_files, dict):
         st.session_state.uploaded_files = {}
+else:
+    # Don't automatically refresh on every page load - only when explicitly requested
+    # This prevents losing data during normal navigation
+    pass
 
-# Initialize navigation and user session state
+# Ensure all existing projects have claim columns (but don't save immediately)
+needs_update = False
+for file_key, df in st.session_state.uploaded_files.items():
+    if 'claimed_by' not in df.columns:
+        df['claimed_by'] = ''
+        needs_update = True
+    if 'claimed_date' not in df.columns:
+        df['claimed_date'] = ''
+        needs_update = True
+    if 'project_status' not in df.columns:
+        df['project_status'] = 'Available'
+        needs_update = True
+    st.session_state.uploaded_files[file_key] = df
+
+# Only save if we actually made changes
+if needs_update:
+    save_session_state()
+
+# Set the title of the app
+st.title("🚀 Welcome to FIDO Review Tool")
+
+# Initialize session state for user authentication and navigation
 if 'current_user' not in st.session_state:
     st.session_state.current_user = None
 if 'page_history' not in st.session_state:
@@ -775,43 +875,57 @@ if 'selected_project' not in st.session_state:
 if 'current_queue' not in st.session_state:
     st.session_state.current_queue = None
 
-# Main app entrypoint: show the correct page
-def main():
-    page = st.session_state.page_history[-1] if st.session_state.page_history else 'login'
-    if st.session_state.current_user is None or page == 'login':
-        show_login_panel()
-    elif page == 'main':
-        show_main_page()
-    elif page == 'overview':
-        show_overview_page()
-    elif page == 'upload':
-        show_upload_page()
-    elif page == 'analytics':
-        show_analytics_page()
-    else:
-        st.warning(f"Unknown page: {page}")
+# Handle URL parameters for navigation and deep linking
+query_params = st.query_params
+if 'fido' in query_params:
+    st.session_state.highlighted_fido = query_params.get('fido')
+elif 'highlighted_fido' not in st.session_state:
+    st.session_state.highlighted_fido = None
 
-main()
-
-# --- PLACEHOLDER FUNCTIONS TO PREVENT BLANK APP ---
-import streamlit as st
-import time
-
-def show_login_panel():
-    st.header("🔐 Login Panel (Placeholder)")
-    st.info("This is a placeholder for the login panel. Please implement your login logic.")
-
-def navigate_to(page_name):
-    if 'page_history' not in st.session_state:
-        st.session_state.page_history = []
-    st.session_state.page_history.append(page_name)
+def navigate_to(page):
+    """Handle navigation between pages"""
+    if page not in st.session_state.page_history:
+        st.session_state.page_history.append(page)
     st.rerun()
 
-def show_back_button(page_name):
-    if st.button("⬅️ Back", key=f"back_{page_name}"):
-        if 'page_history' in st.session_state and len(st.session_state.page_history) > 1:
-            st.session_state.page_history.pop()
+def show_back_button(prefix=""):
+    if len(st.session_state.page_history) > 1:
+        if st.button('← Back', key=f"back_button_{prefix}"):
+            previous_page = st.session_state.page_history[-2]
+            if previous_page == 'login':
+                st.session_state.current_user = None
+                st.session_state.page_history = ['login']
+            else:
+                st.session_state.page_history.pop()
             st.rerun()
+
+def get_current_page():
+    return st.session_state.page_history[-1] if st.session_state.page_history else 'login'
+
+# Function to display the login panel
+def show_login_panel():
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        st.markdown('<div style="text-align: center; margin-top: 3rem;">', unsafe_allow_html=True)
+        st.markdown('<h2 style="color: white; font-size: 2rem; margin-bottom: 1rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); text-align: center;">🔐 Please Login to Continue</h2>', unsafe_allow_html=True)
+        st.markdown('<p style="color: rgba(255, 255, 255, 0.9); font-size: 1.1rem; margin-bottom: 2rem; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); text-align: center;">Enter your credentials to access the FIDO Review Tool</p>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        name = st.text_input("👤 Full Name:", placeholder="Enter your full name")
+        role = st.radio("🔒 Select your role:", ["Reviewer", "Admin"], horizontal=True)
+        
+        col_a, col_b = st.columns(2)
+        with col_b:
+            login_button = st.button("🔑 Login", type="primary", use_container_width=True)
+        
+        if login_button and name and role:
+            st.session_state.current_user = {"name": name, "role": role}
+            st.success(f"Welcome, {name}! 👋")
+            time.sleep(1)
+            navigate_to('main')
+        elif login_button:
+            st.error("Please fill in all fields")
 
 # Function to display the main page
 def show_main_page():
@@ -1361,67 +1475,191 @@ def show_upload_page():
             else:
                 st.error("❌ Please provide both project title and file")
 
-def show_analytics_page():
-    if st.session_state.current_user['role'] != "Admin":
-        st.error("🚫 Access denied. Admins only.")
-        return
-        
-    show_back_button('analytics')
-    st.header("📈 Analytics Dashboard")
-
+def show_project_selection_page(queue_type):
+    show_back_button(f"selection_{queue_type}")
+    st.header(f"📂 {queue_type.title()} Projects")
+    
     # Refresh data to ensure we see latest changes from all users
     refresh_session_state()
     
-    # Add refresh button
-    if st.button("🔄 Refresh Data", help="Refresh to see latest analytics data"):
-        refresh_session_state()
-        st.rerun()
-
-    # Collect all project data for analytics
-    all_projects = []
-    detailed_analytics = []
+    # Add refresh button and search bar for manual updates
+    col_refresh, col_search, col_info = st.columns([1, 2, 2])
+    with col_refresh:
+        if st.button("🔄 Refresh", help="Refresh to see latest changes from all users"):
+            refresh_session_state()
+            st.rerun()
     
-    for file_key, df in st.session_state.uploaded_files.items():
-        parts = file_key.split('_')
-        if len(parts) < 2:
-            continue
-            
-        queue_type = parts[0]
+    with col_search:
+        search_query = st.text_input(
+            "🔍 Search Projects",
+            placeholder="Search by project name...",
+            key=f"project_search_{queue_type}",
+            help="Filter projects by name"
+        )
+    
+    # Add info about project visibility and category filtering
+    with col_info:
+        if st.session_state.current_user['role'] == "Admin":
+            st.info(f"👑 **Admin View**: Only {queue_type} projects are shown here. Projects appear only in their designated category.")
+        else:
+            st.info(f"👀 **Reviewer View**: Only {queue_type} projects are shown here. All users can see projects regardless of uploader.")
+    
+    # Filter files for this queue type - show ALL projects to ALL users
+    # Fixed: Only show projects that exactly match the queue type (category)
+    queue_files = {}
+    for k, v in st.session_state.uploaded_files.items():
+        parts = k.split('_')
+        if len(parts) > 0 and parts[0] == queue_type:
+            queue_files[k] = v
+    
+    if not queue_files:
+        st.info(f"📭 No projects available in {queue_type} queue")
+        if st.session_state.current_user['role'] == "Admin":
+            if st.button("📤 Upload First Project", type="primary"):
+                navigate_to('upload')
+        return
+    
+    # Group by project
+    projects = {}
+    for k, df in queue_files.items():
+        parts = k.split('_')
         project_name = parts[1]
-        uploader = df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown"
+        priority = parts[2] if len(parts) > 3 else 'medium'
         
-        # Basic project stats
-        total_records = len(df)
-        reviewed = len(df[df['status'] == 'Reviewed'])
-        gmv = get_gmv_sum(df)
+        # Extract date from file key as fallback
+        date_str = parts[-1].split('_')[0] if '_' in parts[-1] and len(parts[-1].split('_')[0]) == 8 else "00000000"
+        try:
+            if len(date_str) == 8 and date_str.isdigit():
+                fallback_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+            else:
+                fallback_date = "Unknown"
+        except (ValueError, IndexError):
+            fallback_date = "Unknown"
         
-        # Advanced FIDO Analytics for reviewed items only
-        reviewed_df = df[df['status'] == 'Reviewed']
-        total_reviewed = len(reviewed_df)
+        # Use actual upload_date from dataframe if available, otherwise use fallback
+        if 'upload_date' in df.columns and not df['upload_date'].empty:
+            formatted_date = df['upload_date'].iloc[0]
+        else:
+            formatted_date = fallback_date
         
-        if total_reviewed > 0:
-            # GMV calculations
-            beginning_gmv = get_gmv_sum(reviewed_df)  # Total GMV of reviewed FIDOs
-            
-            # Calculate various update counts
-            total_updated = 0
-            category_only_updated = 0
-            brand_only_updated = 0
-            both_updated = 0
-            no_updates = 0
-            description_updated = 0
-            
-            # GMV breakdowns
-            category_only_gmv = 0
-            brand_only_gmv = 0
-            both_updated_gmv = 0
-            no_updates_gmv = 0
-            
-            # Special movements
-            brand_id_null_moved = 0
-            false_positive_moved = 0
-            
+        # Ensure claim columns exist
+        if 'claimed_by' not in df.columns:
+            df['claimed_by'] = ''
+        if 'claimed_date' not in df.columns:
+            df['claimed_date'] = ''
+        if 'project_status' not in df.columns:
+            df['project_status'] = 'Available'
+        
+        if project_name not in projects:
+            projects[project_name] = {
+                'files': [],
+                'priority': priority,
+                'total': 0,
+                'reviewed': 0,
+                'gmv': 0,
+                'uploader': df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown",
+                'date': formatted_date,
+                'claimed_by': df['claimed_by'].iloc[0] if 'claimed_by' in df.columns and not df['claimed_by'].iloc[0] == '' else None,
+                'claimed_date': df['claimed_date'].iloc[0] if 'claimed_date' in df.columns and not df['claimed_date'].iloc[0] == '' else None,
+                'project_status': df['project_status'].iloc[0] if 'project_status' in df.columns else 'Available'
+            }
+        
+        projects[project_name]['files'].append((k, df))
+        projects[project_name]['total'] += len(df)
+        projects[project_name]['reviewed'] += len(df[df['status'] == 'Reviewed'])
+        projects[project_name]['gmv'] += get_gmv_sum(df)
 
+    # Display projects in modern cards
+    cols = st.columns(2)
+    priority_colors = {'high': '#ef4444', 'medium': '#f59e0b', 'low': '#10b981'}
+    
+    # Sort projects by priority (high -> medium -> low)
+    priority_order = {'high': 3, 'medium': 2, 'low': 1}
+    sorted_projects = sorted(projects.items(), key=lambda x: priority_order.get(x[1]['priority'], 0), reverse=True)
+    
+    # Apply search filter if search query is provided
+    if search_query:
+        filtered_projects = []
+        for project_name, data in sorted_projects:
+            if search_query.lower() in project_name.lower():
+                filtered_projects.append((project_name, data))
+        sorted_projects = filtered_projects
+    
+    # Show search results info
+    if search_query:
+        if sorted_projects:
+            st.success(f"🔍 Found {len(sorted_projects)} project(s) matching '{search_query}'")
+        else:
+            st.warning(f"❌ No projects found matching '{search_query}'. Try a different search term.")
+            return
+    
+    for idx, (project_name, data) in enumerate(sorted_projects):
+        progress = (data['reviewed'] / data['total'] * 100) if data['total'] > 0 else 0
+        priority_color = priority_colors.get(data['priority'], '#6b7280')
+        
+        # Determine project status display
+        status_info = ""
+        if data.get('claimed_by'):
+            claimed_date = data.get('claimed_date', 'Unknown')
+            status_info = f"<p style='margin: 0.25rem 0;'><strong>🎯 Reviewing:</strong> {data['claimed_by']} (claimed {claimed_date})</p>"
+        else:
+            status_info = "<p style='margin: 0.25rem 0;'><strong>📌 Status:</strong> Available for review</p>"
+        
+        with cols[idx % 2]:
+            st.markdown(f"""
+                <div class="modern-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: var(--text-primary); font-weight: 600;">{project_name}</h4>
+                        <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">
+                            {data['priority'].title()}
+                        </span>
+                    </div>
+                    <div style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">
+                        <p style="margin: 0.25rem 0;"><strong>Queue:</strong> {queue_type.title()}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Upload Date:</strong> {data['date']}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Uploader:</strong> {data['uploader']}</p>
+                        {status_info}
+                        <p style="margin: 0.25rem 0;"><strong>GMV:</strong> ${data['gmv']:,.2f}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Progress:</strong> {data['reviewed']}/{data['total']} ({progress:.1f}%)</p>
+                    </div>
+                    <div style="margin-top: 1rem; margin-bottom: 1rem;">
+                        <div style="background-color: #e5e7eb; border-radius: 10px; height: 12px; border: 1px solid #d1d5db; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 100%; width: {progress}%; border-radius: 10px; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Action buttons inside the card area (but outside the HTML since Streamlit buttons need to be separate)
+            col_action1, col_action2 = st.columns(2)
+            
+            with col_action1:
+                if st.button("� Review", key=f"review_{project_name}", use_container_width=True):
+                    # Automatically claim the project when reviewing
+                    current_date = datetime.now().strftime("%Y-%m-%d")
+                    for file_key, df in data['files']:
+                        df['claimed_by'] = st.session_state.current_user['name']
+                        df['claimed_date'] = current_date
+                        df['project_status'] = 'Claimed'
+                        st.session_state.uploaded_files[file_key] = df
+                    save_session_state()
+                    refresh_session_state()
+                    
+                    st.session_state.selected_project = data['files'][0][0]  # First file key
+                    navigate_to(f"{queue_type}_review")
+            
+            with col_action2:
+                # Download option
+                first_file = data['files'][0][1]
+                csv = first_file.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    "📥 Download",
+                    data=csv,
+                    file_name=f"{project_name}.csv",
+                    mime="text/csv",
+                    key=f"download_{project_name}",
+                    use_container_width=True
+                )
             
             # Admin delete button (also inside the card)
             if st.session_state.current_user['role'] == "Admin":
@@ -1442,6 +1680,7 @@ def show_analytics_page():
                 with col_confirm2:
                     if st.button("✅ Delete", key=f"confirm_btn_{project_name}", type="primary", use_container_width=True):
                         # Delete all files for this project
+                        for file_key, _ in data['files']:
                             if file_key in st.session_state.uploaded_files:
                                 del st.session_state.uploaded_files[file_key]
                         
@@ -2056,6 +2295,7 @@ def show_analytics_page():
 # Enhanced reviewer interface showing all FIDOs
 def show_reviewer_page(queue_type):
     if not st.session_state.selected_project:
+        show_project_selection_page(queue_type)
         return
     
     show_back_button('reviewer')
@@ -2480,3 +2720,20 @@ def show_reviewer_page(queue_type):
             )
 
 # Main routing
+current_page = get_current_page()
+
+if st.session_state.current_user:
+    if current_page == 'main':
+        show_main_page()
+    elif current_page == 'overview':
+        show_overview_page()
+    elif current_page == 'upload':
+        show_upload_page()
+    elif current_page == 'analytics':
+        show_analytics_page()
+    elif current_page in ['nonlicensed', 'licensed', 'catq']:
+        show_project_selection_page(current_page)
+    elif current_page.endswith('_review'):
+        show_reviewer_page(current_page.split('_')[0])
+else:
+    show_login_panel()
