@@ -33,7 +33,6 @@ def run_snowflake_query(
 
         import streamlit as st
 import pandas as pd
-import snowflake.connector
 from datetime import datetime
 import time
 
@@ -176,4 +175,5 @@ def show_snowflake_query_page():
                 if not project_title:
                     st.warning("Please enter a project title before uploading.")
                 else:
-                    
+                    # Your upload logic here
+                    pass
