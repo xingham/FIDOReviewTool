@@ -838,93 +838,90 @@ def get_relevant_category(category_hierarchy):
 if 'uploaded_files' not in st.session_state:
     st.session_state.uploaded_files = load_session_state()
     if not isinstance(st.session_state.uploaded_files, dict):
-        st.session_state.uploaded_files = {}
-else:
-    # Don't automatically refresh on every page load - only when explicitly requested
-    # This prevents losing data during normal navigation
-    pass
+    # Build a projects dictionary from uploaded files
+    projects = {}
+    for file_key, df in st.session_state.uploaded_files.items():
+        parts = file_key.split('_')
+        if len(parts) < 2:
+            continue
+        queue_type = parts[0]
+        project_name = parts[1]
+        uploader = df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown"
+        priority = df['priority'].iloc[0] if 'priority' in df.columns else "medium"
+        total = len(df)
+        reviewed = len(df[df['status'] == 'Reviewed']) if 'status' in df.columns else 0
+        gmv = get_gmv_sum(df)
+        # Use file_key as unique identifier for files
+        if project_name not in projects:
+            projects[project_name] = {
+                'queue_type': queue_type,
+                'uploader': uploader,
+                'priority': priority,
+                'files': [],
+                'total': 0,
+                'reviewed': 0,
+                'gmv': 0.0,
+                'claimed_by': df['claimed_by'].iloc[0] if 'claimed_by' in df.columns else '',
+                'claimed_date': df['claimed_date'].iloc[0] if 'claimed_date' in df.columns else '',
+                'project_status': df['project_status'].iloc[0] if 'project_status' in df.columns else 'Available',
+            }
+        projects[project_name]['files'].append((file_key, df))
+        projects[project_name]['total'] += total
+        projects[project_name]['reviewed'] += reviewed
+        projects[project_name]['gmv'] += gmv
 
-# Ensure all existing projects have claim columns (but don't save immediately)
-needs_update = False
-for file_key, df in st.session_state.uploaded_files.items():
-    if 'claimed_by' not in df.columns:
-        df['claimed_by'] = ''
-        needs_update = True
-    if 'claimed_date' not in df.columns:
-        df['claimed_date'] = ''
-        needs_update = True
-    if 'project_status' not in df.columns:
-        df['project_status'] = 'Available'
-        needs_update = True
-    st.session_state.uploaded_files[file_key] = df
+    # Display projects in modern cards
+    cols = st.columns(2)
+    priority_colors = {'high': '#ef4444', 'medium': '#f59e0b', 'low': '#10b981'}
+    # Sort projects by priority (high -> medium -> low)
+    priority_order = {'high': 3, 'medium': 2, 'low': 1}
+    sorted_projects = sorted(projects.items(), key=lambda x: priority_order.get(str(x[1]['priority']).lower(), 0), reverse=True)
 
-# Only save if we actually made changes
-if needs_update:
-    save_session_state()
+    # Add a search box for filtering projects
+    search_query = st.text_input("🔍 Search Projects by Name", "")
+    if search_query:
+        filtered_projects = []
+        for project_name, data in sorted_projects:
+            if search_query.lower() in project_name.lower():
+                filtered_projects.append((project_name, data))
+        sorted_projects = filtered_projects
 
-# Set the title of the app
-st.title("🚀 Welcome to FIDO Review Tool")
+    # Show search results info
+    if search_query:
+        if sorted_projects:
+            st.success(f"🔍 Found {len(sorted_projects)} project(s) matching '{search_query}'")
+        else:
+            st.warning(f"❌ No projects found matching '{search_query}'. Try a different search term.")
+            return
 
-# Initialize session state for user authentication and navigation
-if 'current_user' not in st.session_state:
-    st.session_state.current_user = None
-if 'page_history' not in st.session_state:
-    st.session_state.page_history = ['login']
-if 'selected_project' not in st.session_state:
-    st.session_state.selected_project = None
-if 'current_queue' not in st.session_state:
-    st.session_state.current_queue = None
-
-# Handle URL parameters for navigation and deep linking
-query_params = st.query_params
-if 'fido' in query_params:
-    st.session_state.highlighted_fido = query_params.get('fido')
-elif 'highlighted_fido' not in st.session_state:
-    st.session_state.highlighted_fido = None
-
-def navigate_to(page):
-    """Handle navigation between pages"""
-    if page not in st.session_state.page_history:
-        st.session_state.page_history.append(page)
-    st.rerun()
-
-def show_back_button(prefix=""):
-    if len(st.session_state.page_history) > 1:
-        if st.button('← Back', key=f"back_button_{prefix}"):
-            previous_page = st.session_state.page_history[-2]
-            if previous_page == 'login':
-                st.session_state.current_user = None
-                st.session_state.page_history = ['login']
-            else:
-                st.session_state.page_history.pop()
-            st.rerun()
-
-def get_current_page():
-    return st.session_state.page_history[-1] if st.session_state.page_history else 'login'
-
-# Function to display the login panel
-def show_login_panel():
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col2:
-        st.markdown('<div style="text-align: center; margin-top: 3rem;">', unsafe_allow_html=True)
-        st.markdown('<h2 style="color: white; font-size: 2rem; margin-bottom: 1rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); text-align: center;">🔐 Please Login to Continue</h2>', unsafe_allow_html=True)
-        st.markdown('<p style="color: rgba(255, 255, 255, 0.9); font-size: 1.1rem; margin-bottom: 2rem; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); text-align: center;">Enter your credentials to access the FIDO Review Tool</p>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        name = st.text_input("👤 Full Name:", placeholder="Enter your full name")
-        role = st.radio("🔒 Select your role:", ["Reviewer", "Admin"], horizontal=True)
-        
-        col_a, col_b = st.columns(2)
-        with col_b:
-            login_button = st.button("🔑 Login", type="primary", use_container_width=True)
-        
-        if login_button and name and role:
-            st.session_state.current_user = {"name": name, "role": role}
-            st.success(f"Welcome, {name}! 👋")
-            time.sleep(1)
-            navigate_to('main')
-        elif login_button:
+    for idx, (project_name, data) in enumerate(sorted_projects):
+        progress = (data['reviewed'] / data['total'] * 100) if data['total'] > 0 else 0
+        priority_color = priority_colors.get(str(data['priority']).lower(), '#6b7280')
+        # Determine project status display
+        status_info = ""
+        if data.get('claimed_by'):
+            claimed_date = data.get('claimed_date', 'Unknown')
+            status_info = f"Claimed by {data['claimed_by']} on {claimed_date}"
+        else:
+            status_info = "Available"
+        with cols[idx % 2]:
+            st.markdown(f"""
+                <div class="modern-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: var(--text-primary); font-weight: 600;">{project_name}</h4>
+                        <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">
+                            {str(data['priority']).title()} Priority
+                        </span>
+                    </div>
+                    <div style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">
+                        <p style="margin: 0.25rem 0;"><strong>Queue:</strong> {data['queue_type'].title()}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Uploader:</strong> {data['uploader']}</p>
+                        <p style="margin: 0.25rem 0;"><strong>GMV:</strong> ${data['gmv']:,.2f}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Progress:</strong> {data['reviewed']}/{data['total']} ({progress:.1f}%)</p>
+                        <p style="margin: 0.25rem 0;"><strong>Status:</strong> {status_info}</p>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
             st.error("Please fill in all fields")
 
 # Function to display the main page
