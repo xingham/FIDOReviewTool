@@ -6,682 +6,6 @@ import pickle
 import os
 import shutil
 
-# Configure page
-st.set_page_config(
-    page_title="FIDO Review Tool",
-    page_icon="🔍",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Add custom CSS for modern styling
-st.markdown("""
-    <style>
-    /* Import modern font */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    /* Global styles */
-    .stApp {
-        font-family: 'Inter', sans-serif;
-        background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-        min-height: 100vh;
-        transition: all 0.3s ease;
-    }
-    
-    /* CSS Variables for theming */
-    :root {
-        --bg-primary: #667eea;
-        --bg-secondary: #764ba2;
-        --card-bg: rgba(255, 255, 255, 0.1);
-        --card-hover-bg: rgba(255, 255, 255, 0.15);
-        --text-primary: #ffffff;
-        --text-secondary: #ffffff;
-        --text-muted: #e2e8f0;
-        --border-color: rgba(255, 255, 255, 0.2);
-        --input-bg: rgba(255, 255, 255, 0.7);
-        --input-focus-bg: rgba(255, 255, 255, 0.9);
-    }
-    
-    [data-theme="light"] {
-        --bg-primary: #f8fafc;
-        --bg-secondary: #e2e8f0;
-        --card-bg: rgba(255, 255, 255, 0.9);
-        --card-hover-bg: rgba(255, 255, 255, 1);
-        --text-primary: #1a202c;
-        --text-secondary: #2d3748;
-        --text-muted: #4a5568;
-        --border-color: rgba(0, 0, 0, 0.1);
-        --input-bg: rgba(255, 255, 255, 0.9);
-        --input-focus-bg: rgba(255, 255, 255, 1);
-    }
-    
-    /* Theme toggle button */
-    .theme-toggle {
-        position: fixed;
-        top: 1rem;
-        right: 1rem;
-        z-index: 1000;
-        background: var(--card-bg);
-        backdrop-filter: blur(10px);
-        border: 1px solid var(--border-color);
-        border-radius: 50px;
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        color: var(--text-secondary);
-        font-weight: 500;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    
-    .theme-toggle:hover {
-        background: var(--card-hover-bg);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-    }
-    
-    /* Base text sizing */
-    .stMarkdown p {
-        font-size: 1rem;
-        line-height: 1.5;
-    }
-    
-    /* Metric styling */
-    .metric-container [data-testid="metric-container"] {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        padding: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    
-    /* Main container */
-    .main > div {
-        padding: 2rem;
-        background: transparent;
-        border-radius: 0px;
-        backdrop-filter: none;
-        box-shadow: none;
-        margin: 1rem;
-    }
-    
-    /* Headers */
-    h1, h2, h3 {
-        color: var(--text-primary);
-        font-weight: 600;
-        text-align: center;
-    }
-    
-    h1 {
-        color: var(--text-primary);
-        text-align: center;
-        font-size: 2.2rem;
-        margin-bottom: 1.5rem;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    h2 {
-        font-size: 1.8rem;
-        margin-bottom: 1.2rem;
-    }
-    
-    h3 {
-        font-size: 1.4rem;
-        margin-bottom: 1rem;
-    }
-    
-    /* Modern cards */
-    .modern-card {
-        background: var(--card-bg);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: 2rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        border: 1px solid var(--border-color);
-        transition: all 0.3s ease;
-        margin-bottom: 1.5rem;
-    }
-    
-    .modern-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        background: var(--card-hover-bg);
-    }
-    
-    .project-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 16px;
-        padding: 2rem;
-        color: white;
-        margin-bottom: 1.5rem;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-    
-    .project-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
-    }
-    
-    .project-title {
-        font-size: 1.3rem;
-        font-weight: 600;
-        margin-bottom: 0.8rem;
-    }
-    
-    .project-info {
-        font-size: 1rem;
-        opacity: 0.9;
-        margin-bottom: 0.4rem;
-    }
-    
-    /* Stats cards */
-    .stats-card {
-        background: var(--card-bg);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        padding: 1.5rem;
-        text-align: center;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-        border-left: 4px solid #667eea;
-        border: 1px solid var(--border-color);
-    }
-    
-    .stats-number {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #704968;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stats-label {
-        color: var(--text-muted);
-        font-size: 1rem;
-        font-weight: 500;
-    }
-    
-    /* Buttons */
-    .stButton > button {
-        background: rgba(255, 255, 255, 0.9) !important;
-        color: #667eea !important;
-        border: 2px solid rgba(255, 255, 255, 0.3) !important;
-        border-radius: 12px;
-        padding: 0.75rem 2rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        backdrop-filter: blur(10px);
-    }
-    
-    .stButton > button:hover {
-        background: rgba(255, 255, 255, 1) !important;
-        color: #667eea !important;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        border-color: rgba(255, 255, 255, 0.5) !important;
-    }
-    
-    /* Primary buttons (Login, Upload, etc.) */
-    .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-        color: white !important;
-        border: none !important;
-        font-weight: 600;
-    }
-    
-    .stButton > button[kind="primary"]:hover {
-        background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
-        color: white !important;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
-    }
-    
-    /* Sidebar */
-    .sidebar .sidebar-content {
-        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    
-    /* Input fields */
-    .stTextInput > div > div > input,
-    .stSelectbox > div > div > select,
-    .stTextArea > div > div > textarea {
-        border-radius: 12px;
-        border: 2px solid rgba(102, 126, 234, 0.3);
-        background: var(--input-bg);
-        backdrop-filter: blur(5px);
-        transition: all 0.3s ease;
-        color: #1a202c !important;
-        font-weight: 500;
-    }
-    
-    .stTextInput > div > div > input:focus,
-    .stSelectbox > div > div > select:focus,
-    .stTextArea > div > div > textarea:focus {
-        border-color: #667eea;
-        background: var(--input-focus-bg);
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-        color: #1a202c !important;
-    }
-    
-    /* Placeholder text */
-    .stTextInput > div > div > input::placeholder,
-    .stTextArea > div > div > textarea::placeholder {
-        color: #6b7280 !important;
-        opacity: 0.7;
-    }
-    
-    /* Radio button options */
-    .stRadio > div > div > div > label {
-        color: var(--text-secondary) !important;
-        font-weight: 500 !important;
-    }
-    
-    /* Select box options */
-    .stSelectbox > div > div > select option {
-        background: white !important;
-        color: #1a202c !important;
-    }
-    
-    /* Input labels */
-    .stTextInput > label,
-    .stSelectbox > label,
-    .stTextArea > label,
-    .stRadio > label {
-        font-size: 1.1rem !important;
-        font-weight: 600 !important;
-        color: var(--text-secondary) !important;
-        margin-bottom: 0.5rem !important;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
-    }
-    
-    /* Progress bars */
-    .stProgress > div > div {
-        background-color: #e5e7eb !important;
-        border-radius: 10px !important;
-        height: 12px !important;
-        margin: 0.5rem 0 !important;
-        border: 1px solid #d1d5db !important;
-    }
-    
-    .stProgress > div > div > div {
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
-        border-radius: 10px !important;
-        height: 12px !important;
-        box-shadow: none !important;
-    }
-    
-    /* Navigation */
-    .nav-pill {
-        background: rgba(102, 126, 234, 0.1);
-        color: #667eea;
-        padding: 0.5rem 1rem;
-        border-radius: 25px;
-        text-decoration: none;
-        font-weight: 500;
-        margin: 0.25rem;
-        display: inline-block;
-        transition: all 0.3s ease;
-    }
-    
-    .nav-pill:hover {
-        background: #667eea;
-        color: white;
-        transform: translateY(-2px);
-    }
-    
-    /* Animations */
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .animate-slide-in {
-        animation: slideIn 0.5s ease-out;
-    }
-    
-    /* Modern tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        background: rgba(102, 126, 234, 0.1);
-        border-radius: 12px;
-        padding: 12px 24px;
-        border: none;
-        color: #667eea;
-        font-weight: 500;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    
-    /* File uploader */
-    .stFileUploader > div {
-        border: 2px dashed #667eea;
-        border-radius: 12px;
-        background: rgba(102, 126, 234, 0.05);
-        transition: all 0.3s ease;
-    }
-    
-    .stFileUploader > div:hover {
-        border-color: #764ba2;
-        background: rgba(102, 126, 234, 0.1);
-    }
-    
-    /* Success/Error messages */
-    .stSuccess {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        border-radius: 12px;
-        color: white;
-    }
-    
-    .stError {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        border-radius: 12px;
-        color: white;
-    }
-    
-    /* FIDO Card Styles */
-    .fido-card {
-        background: var(--card-bg);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        border: 1px solid var(--border-color);
-        transition: all 0.3s ease;
-        position: relative;
-    }
-    
-    .fido-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
-        background: var(--card-hover-bg);
-    }
-    
-    .fido-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid var(--border-color);
-    }
-    
-    .fido-title {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin: 0;
-    }
-    
-    .fido-status {
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
-    
-    .status-pending {
-        background: #ff6b35 !important;
-        color: #ffffff !important;
-        border: 2px solid #e55a2b !important;
-        font-weight: 700 !important;
-        box-shadow: 0 3px 8px rgba(255, 107, 53, 0.4) !important;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-        padding: 0.4rem 0.8rem !important;
-        border-radius: 25px !important;
-        font-size: 0.85rem !important;
-        letter-spacing: 0.5px !important;
-    }
-    
-    .status-reviewed {
-        background: #22c55e !important;
-        color: #ffffff !important;
-        border: 2px solid #16a34a !important;
-        font-weight: 700 !important;
-        box-shadow: 0 3px 8px rgba(34, 197, 94, 0.4) !important;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-        padding: 0.4rem 0.8rem !important;
-        border-radius: 25px !important;
-        font-size: 0.85rem !important;
-        letter-spacing: 0.5px !important;
-    }
-    
-    .fido-content {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-    
-    .fido-field {
-        margin-bottom: 0.5rem;
-    }
-    
-    .fido-field strong {
-        color: var(--text-primary);
-        font-weight: 600;
-    }
-    
-    .fido-field span {
-        color: var(--text-secondary);
-        margin-left: 0.5rem;
-    }
-    
-    .share-link {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-        color: var(--text-secondary);
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    
-    .share-link:hover {
-        background: var(--card-hover-bg);
-        color: var(--text-primary);
-    }
-    
-    .review-actions {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--border-color);
-    }
-    
-    /* Mobile responsiveness */
-    @media (max-width: 768px) {
-        .main > div {
-            margin: 0.5rem;
-            padding: 1rem;
-        }
-        
-        h1 {
-            font-size: 2rem;
-        }
-        
-        .project-card {
-            padding: 1.5rem;
-        }
-    }
-    </style>
-    
-    <!-- Theme Toggle Script -->
-    <div class="theme-toggle" onclick="toggleTheme()">
-        <span id="theme-icon">🌙</span>
-        <span id="theme-text">Dark</span>
-    </div>
-    
-    <script>
-    function toggleTheme() {
-        const body = document.body;
-        const currentTheme = body.getAttribute('data-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        const icon = document.getElementById('theme-icon');
-        const text = document.getElementById('theme-text');
-        
-        body.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        
-        if (newTheme === 'light') {
-            icon.textContent = '🌞';
-            text.textContent = 'Light';
-        } else {
-            icon.textContent = '🌙';
-            text.textContent = 'Dark';
-        }
-    }
-    
-    // Handle navigation from clickable cards
-    window.addEventListener('message', function(event) {
-        if (event.data.type === 'navigate') {
-            // Map page names to button keys
-            const buttonMap = {
-                'nonlicensed': 'nav_nonlicensed',
-                'licensed': 'nav_licensed', 
-                'catq': 'nav_catq'
-            };
-            
-            const targetButton = buttonMap[event.data.page];
-            if (targetButton) {
-                // Find button by data-testid or key
-                const buttons = document.querySelectorAll('button');
-                buttons.forEach(button => {
-                    const testId = button.getAttribute('data-testid');
-                    if (testId && testId.includes(targetButton)) {
-                        button.click();
-                        return;
-                    }
-                });
-            }
-        }
-    });
-    
-    // Alternative: direct navigation using Streamlit's JavaScript API
-    function navigateToPage(page) {
-        const buttonMap = {
-            'nonlicensed': 'nav_nonlicensed',
-            'licensed': 'nav_licensed', 
-            'catq': 'nav_catq'
-        };
-        
-        const targetButton = buttonMap[page];
-        if (targetButton) {
-            // Try to find and click the button
-            setTimeout(() => {
-                const buttons = document.querySelectorAll('button');
-                buttons.forEach(button => {
-                    const testId = button.getAttribute('data-testid');
-                    if (testId && testId.includes(targetButton)) {
-                        button.click();
-                    }
-                });
-            }, 100);
-        }
-    }
-    
-    // Auto-scroll to FIDO if URL parameter is present
-    function autoScrollToFido() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const fidoId = urlParams.get('fido');
-        if (fidoId) {
-            setTimeout(() => {
-                const fidoElement = document.getElementById(`fido-${fidoId}`);
-                if (fidoElement) {
-                    fidoElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    fidoElement.style.border = '3px solid #667eea';
-                    fidoElement.style.borderRadius = '12px';
-                    fidoElement.style.backgroundColor = 'rgba(102, 126, 234, 0.1)';
-                }
-            }, 1000);
-        }
-    }
-    
-    // Copy to clipboard function with fallback
-    function copyToClipboard(path, description) {
-        const fullUrl = window.location.origin + window.location.pathname + path;
-        
-        // Try modern clipboard API first
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(fullUrl).then(() => {
-                alert(`✅ Link copied to clipboard for ${description}!`);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
-                fallbackCopyTextToClipboard(fullUrl, description);
-            });
-        } else {
-            // Fallback for older browsers or non-secure contexts
-            fallbackCopyTextToClipboard(fullUrl, description);
-        }
-    }
-    
-    // Fallback copy function
-    function fallbackCopyTextToClipboard(text, description) {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        
-        // Avoid scrolling to bottom
-        textArea.style.top = "0";
-        textArea.style.left = "0";
-        textArea.style.position = "fixed";
-        textArea.style.opacity = "0";
-        
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        
-        try {
-            const successful = document.execCommand('copy');
-            if (successful) {
-                alert(`✅ Link copied to clipboard for ${description}!`);
-            } else {
-                alert(`❌ Failed to copy link. Please copy manually: ${text}`);
-            }
-        } catch (err) {
-            console.error('Fallback copy failed: ', err);
-            alert(`❌ Copy failed. Please copy manually: ${text}`);
-        }
-        
-        document.body.removeChild(textArea);
-    }
-    
-    // Initialize theme on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        const icon = document.getElementById('theme-icon');
-        const text = document.getElementById('theme-text');
-        
-        document.body.setAttribute('data-theme', savedTheme);
-        
-        if (savedTheme === 'light') {
-            icon.textContent = '🌞';
-            text.textContent = 'Light';
-        } else {
-            icon.textContent = '🌙';
-            text.textContent = 'Dark';
-        }
-        
-        // Auto-scroll to FIDO
-        autoScrollToFido();
-    });
-    
-    // Apply theme immediately to prevent flash
-    (function() {
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        document.body.setAttribute('data-theme', savedTheme);
-    })();
-    </script>
-""", unsafe_allow_html=True)
-
 # Add file storage constants
 STORAGE_DIR = "data"
 STORAGE_FILE = os.path.join(STORAGE_DIR, "uploaded_files.pkl")
@@ -834,54 +158,6 @@ def get_relevant_category(category_hierarchy):
     else:
         # If no ">" found, return the original category
         return category_str
-
-# Initialize session state
-if 'uploaded_files' not in st.session_state:
-    st.session_state.uploaded_files = load_session_state()
-    if not isinstance(st.session_state.uploaded_files, dict):
-        st.session_state.uploaded_files = {}
-else:
-    # Don't automatically refresh on every page load - only when explicitly requested
-    # This prevents losing data during normal navigation
-    pass
-
-# Ensure all existing projects have claim columns (but don't save immediately)
-needs_update = False
-for file_key, df in st.session_state.uploaded_files.items():
-    if 'claimed_by' not in df.columns:
-        df['claimed_by'] = ''
-        needs_update = True
-    if 'claimed_date' not in df.columns:
-        df['claimed_date'] = ''
-        needs_update = True
-    if 'project_status' not in df.columns:
-        df['project_status'] = 'Available'
-        needs_update = True
-    st.session_state.uploaded_files[file_key] = df
-
-# Only save if we actually made changes
-if needs_update:
-    save_session_state()
-
-# Set the title of the app
-st.title("🚀 Welcome to FIDO Review Tool")
-
-# Initialize session state for user authentication and navigation
-if 'current_user' not in st.session_state:
-    st.session_state.current_user = None
-if 'page_history' not in st.session_state:
-    st.session_state.page_history = ['login']
-if 'selected_project' not in st.session_state:
-    st.session_state.selected_project = None
-if 'current_queue' not in st.session_state:
-    st.session_state.current_queue = None
-
-# Handle URL parameters for navigation and deep linking
-query_params = st.query_params
-if 'fido' in query_params:
-    st.session_state.highlighted_fido = query_params.get('fido')
-elif 'highlighted_fido' not in st.session_state:
-    st.session_state.highlighted_fido = None
 
 def navigate_to(page):
     """Handle navigation between pages"""
@@ -2542,6 +1818,316 @@ def show_project_selection_page(queue_type):
 
 def main():
     """Main application function"""
+    # Configure page
+    st.set_page_config(
+        page_title="FIDO Review Tool",
+        page_icon="🔍",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+
+    # Add custom CSS for modern styling
+    st.markdown("""
+        <style>
+        /* Import modern font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        /* Global styles */
+        .stApp {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+        
+        /* CSS Variables for theming */
+        :root {
+            --bg-primary: #667eea;
+            --bg-secondary: #764ba2;
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-hover-bg: rgba(255, 255, 255, 0.15);
+            --text-primary: #ffffff;
+            --text-secondary: #ffffff;
+            --text-muted: #e2e8f0;
+            --border-color: rgba(255, 255, 255, 0.2);
+            --input-bg: rgba(255, 255, 255, 0.7);
+            --input-focus-bg: rgba(255, 255, 255, 0.9);
+        }
+        
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #e2e8f0;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --card-hover-bg: rgba(255, 255, 255, 1);
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --border-color: #e2e8f0;
+            --input-bg: rgba(255, 255, 255, 0.9);
+            --input-focus-bg: rgba(255, 255, 255, 1);
+        }
+        
+        /* Modern card styles */
+        .modern-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .modern-card:hover {
+            background: var(--card-hover-bg);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Stats cards */
+        .stats-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stats-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stats-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        /* FIDO review cards */
+        .fido-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .fido-card:hover {
+            background: var(--card-hover-bg);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .fido-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .fido-title {
+            margin: 0;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        .share-link {
+            background: rgba(102, 126, 234, 0.2);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+        
+        .share-link:hover {
+            background: rgba(102, 126, 234, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .fido-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .fido-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .fido-field strong {
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-right: 1rem;
+        }
+        
+        .fido-field span {
+            color: var(--text-secondary);
+            text-align: right;
+            flex: 1;
+        }
+        
+        .fido-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background: rgba(249, 115, 22, 0.2);
+            color: #f97316;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+        
+        .status-reviewed {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .review-actions {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Input styling */
+        .stTextInput > div > div > input,
+        .stTextArea > div > div > textarea,
+        .stSelectbox > div > div > div {
+            background: var(--input-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            color: var(--text-primary) !important;
+        }
+        
+        .stTextInput > div > div > input:focus,
+        .stTextArea > div > div > textarea:focus {
+            background: var(--input-focus-bg) !important;
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+        }
+        
+        /* Button styling */
+        .stButton > button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .stButton > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Sidebar styling */
+        .css-1d391kg {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        /* Hide Streamlit branding */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Initialize session state
+    if 'uploaded_files' not in st.session_state:
+        st.session_state.uploaded_files = load_session_state()
+        if not isinstance(st.session_state.uploaded_files, dict):
+            st.session_state.uploaded_files = {}
+    else:
+        # Don't automatically refresh on every page load - only when explicitly requested
+        # This prevents losing data during normal navigation
+        pass
+
+    # Ensure all existing projects have claim columns (but don't save immediately)
+    needs_update = False
+    for file_key, df in st.session_state.uploaded_files.items():
+        if 'claimed_by' not in df.columns:
+            df['claimed_by'] = ''
+            needs_update = True
+        if 'claimed_date' not in df.columns:
+            df['claimed_date'] = ''
+            needs_update = True
+        if 'project_status' not in df.columns:
+            df['project_status'] = 'Available'
+            needs_update = True
+
+    # Only save if we actually made changes
+    if needs_update:
+        save_session_state()
+
+    # Set the title of the app
+    st.title("🚀 Welcome to FIDO Review Tool")
+
+    # Initialize session state for user authentication and navigation
+    if 'current_user' not in st.session_state:
+        st.session_state.current_user = None
+    if 'page_history' not in st.session_state:
+        st.session_state.page_history = ['login']
+    if 'selected_project' not in st.session_state:
+        st.session_state.selected_project = None
+    if 'current_queue' not in st.session_state:
+        st.session_state.current_queue = None
+
+    # Handle URL parameters for navigation and deep linking
+    query_params = st.query_params
+    if 'fido' in query_params:
+        st.session_state.highlighted_fido = query_params.get('fido')
+    elif 'highlighted_fido' not in st.session_state:
+        st.session_state.highlighted_fido = None
+
     # Main routing
     current_page = get_current_page()
 
