@@ -1,6 +1,9 @@
-# Entrypoint for Streamlit app (delegates to app.py)
+# Streamlit app entrypoint
+# This file serves as the main entry point for enterprise Streamlit deployments
 
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+
+# Import the main application
 import app
-
-# If you want to run as `streamlit run src/main.py`, this will work.
-# If deploying, set main.py as the entry point in your deployment settings.
