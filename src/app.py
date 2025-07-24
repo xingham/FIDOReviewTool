@@ -2023,7 +2023,7 @@ def main():
             background: var(--input-bg) !important;
             border: 1px solid var(--border-color) !important;
             border-radius: 8px !important;
-            color: var(--text-primary) !important;
+            color: #1a202c !important;
         }
         
         .stTextInput > div > div > input:focus,
@@ -2031,6 +2031,14 @@ def main():
             background: var(--input-focus-bg) !important;
             border-color: #667eea !important;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+            color: #1a202c !important;
+        }
+        
+        /* Placeholder text styling */
+        .stTextInput > div > div > input::placeholder,
+        .stTextArea > div > div > textarea::placeholder {
+            color: #718096 !important;
+            opacity: 0.7;
         }
         
         /* Button styling */
