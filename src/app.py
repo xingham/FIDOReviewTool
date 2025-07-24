@@ -2153,20 +2153,88 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    # Apply current theme to document
+    # Apply current theme to document using CSS injection
     theme_attr = 'dark' if st.session_state.theme_mode == 'dark' else 'light'
-    st.markdown(f"""
-        <script>
-        // Force theme application
-        document.documentElement.setAttribute('data-theme', '{theme_attr}');
-        
-        // Also set as CSS class for backup
-        document.documentElement.className = 'theme-{theme_attr}';
-        
-        // Store in localStorage for persistence
-        localStorage.setItem('theme', '{theme_attr}');
-        </script>
-    """, unsafe_allow_html=True)
+    
+    # Inject theme-specific CSS directly
+    if st.session_state.theme_mode == 'dark':
+        st.markdown(f"""
+            <style>
+            /* Force dark theme styles */
+            .stApp {{
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+            }}
+            
+            .main .block-container {{
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+            }}
+            
+            /* Override any Streamlit default backgrounds */
+            .element-container, .stMarkdown, .stButton, .stSelectbox, .stTextInput {{
+                background: transparent !important;
+            }}
+            
+            /* Ensure text is visible in dark mode */
+            .stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {{
+                color: #ffffff !important;
+            }}
+            
+            /* Input styling for dark mode */
+            .stTextInput > div > div > input,
+            .stTextArea > div > div > textarea,
+            .stSelectbox > div > div > div {{
+                background: rgba(20, 20, 30, 0.8) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                border-radius: 8px !important;
+                color: #ffffff !important;
+            }}
+            
+            /* Card backgrounds for dark mode */
+            .modern-card, .stats-card, .fido-card {{
+                background: rgba(30, 30, 50, 0.8) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            }}
+            </style>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+            <style>
+            /* Force light theme styles */
+            .stApp {{
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            }}
+            
+            .main .block-container {{
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            }}
+            
+            /* Override any Streamlit default backgrounds */
+            .element-container, .stMarkdown, .stButton, .stSelectbox, .stTextInput {{
+                background: transparent !important;
+            }}
+            
+            /* Ensure text is visible in light mode */
+            .stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {{
+                color: #ffffff !important;
+            }}
+            
+            /* Input styling for light mode */
+            .stTextInput > div > div > input,
+            .stTextArea > div > div > textarea,
+            .stSelectbox > div > div > div {{
+                background: rgba(255, 255, 255, 0.7) !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                border-radius: 8px !important;
+                color: #1a202c !important;
+            }}
+            
+            /* Card backgrounds for light mode */
+            .modern-card, .stats-card, .fido-card {{
+                background: rgba(255, 255, 255, 0.1) !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            }}
+            </style>
+        """, unsafe_allow_html=True)
 
     # Initialize session state
     if 'uploaded_files' not in st.session_state:
@@ -2201,16 +2269,9 @@ def main():
         current_theme_icon = "🌙" if st.session_state.theme_mode == 'light' else "☀️"
         theme_label = "Dark Mode" if st.session_state.theme_mode == 'light' else "Light Mode"
         if st.button(f"{current_theme_icon}", key="theme_toggle", help=f"Switch to {theme_label}"):
+            # Toggle theme mode
             st.session_state.theme_mode = 'dark' if st.session_state.theme_mode == 'light' else 'light'
-            # Force immediate theme application
-            new_theme = st.session_state.theme_mode
-            st.markdown(f"""
-                <script>
-                document.documentElement.setAttribute('data-theme', '{new_theme}');
-                document.documentElement.className = 'theme-{new_theme}';
-                localStorage.setItem('theme', '{new_theme}');
-                </script>
-            """, unsafe_allow_html=True)
+            # Immediately rerun to apply new theme
             st.rerun()
 
     # Set the title of the app with centered styling
