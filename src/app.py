@@ -1877,6 +1877,22 @@ def main():
             --header-text-color: #ffffff;
         }}
         
+        /* Alternative selector for dark theme */
+        .theme-dark {{
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --card-bg: rgba(30, 30, 50, 0.8);
+            --card-hover-bg: rgba(30, 30, 50, 0.9);
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+            --text-muted: #a0aec0;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --input-bg: rgba(20, 20, 30, 0.8);
+            --input-focus-bg: rgba(20, 20, 30, 0.9);
+            --input-text-color: #ffffff;
+            --header-text-color: #ffffff;
+        }}
+        
         /* Center the main title */
         .main-title {{
             text-align: center;
@@ -2135,30 +2151,20 @@ def main():
             background: rgba(255, 255, 255, 0.5);
         }}
         </style>
-        
-        <script>
-        function toggleTheme() {{
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            
-            // Store theme preference
-            localStorage.setItem('theme', newTheme);
-        }}
-        
-        // Apply saved theme on load
-        document.addEventListener('DOMContentLoaded', function() {{
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        }});
-        </script>
     """, unsafe_allow_html=True)
 
     # Apply current theme to document
     theme_attr = 'dark' if st.session_state.theme_mode == 'dark' else 'light'
     st.markdown(f"""
         <script>
+        // Force theme application
         document.documentElement.setAttribute('data-theme', '{theme_attr}');
+        
+        // Also set as CSS class for backup
+        document.documentElement.className = 'theme-{theme_attr}';
+        
+        // Store in localStorage for persistence
+        localStorage.setItem('theme', '{theme_attr}');
         </script>
     """, unsafe_allow_html=True)
 
@@ -2196,6 +2202,15 @@ def main():
         theme_label = "Dark Mode" if st.session_state.theme_mode == 'light' else "Light Mode"
         if st.button(f"{current_theme_icon}", key="theme_toggle", help=f"Switch to {theme_label}"):
             st.session_state.theme_mode = 'dark' if st.session_state.theme_mode == 'light' else 'light'
+            # Force immediate theme application
+            new_theme = st.session_state.theme_mode
+            st.markdown(f"""
+                <script>
+                document.documentElement.setAttribute('data-theme', '{new_theme}');
+                document.documentElement.className = 'theme-{new_theme}';
+                localStorage.setItem('theme', '{new_theme}');
+                </script>
+            """, unsafe_allow_html=True)
             st.rerun()
 
     # Set the title of the app with centered styling
