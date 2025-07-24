@@ -1,5 +1,5 @@
-# Streamlit app entry point for enterprise deployment
-# This file serves as the main entry point located in the root directory
+# Enterprise Streamlit deployment entry point
+# This file serves as the main entry point for enterprise deployments
 
 import sys
 import os
@@ -10,5 +10,5 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 # Import and run the main application
 from app import main
 
-if __name__ == "__main__":
-    main()
+# Run the application
+main()
