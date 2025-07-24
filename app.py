@@ -4,7 +4,6 @@ from datetime import datetime
 import time
 import pickle
 import os
-import shutil
 
 # Configure page
 st.set_page_config(
@@ -1476,10 +1475,413 @@ def show_upload_page():
             else:
                 st.error("❌ Please provide both project title and file")
 
-def show_admin_page():
-    show_back_button('admin')
-    st.header("👥 Admin Panel")
-    st.info("Admin features coming soon!")
+def show_project_selection_page(queue_type):
+    show_back_button(f"selection_{queue_type}")
+    st.header(f"📂 {queue_type.title()} Projects")
+    
+    # Refresh data to ensure we see latest changes from all users
+    refresh_session_state()
+    
+    # Add refresh button and search bar for manual updates
+    col_refresh, col_search, col_info = st.columns([1, 2, 2])
+    with col_refresh:
+        if st.button("🔄 Refresh", help="Refresh to see latest changes from all users"):
+            refresh_session_state()
+            st.rerun()
+    
+    with col_search:
+        search_query = st.text_input(
+            "🔍 Search Projects",
+            placeholder="Search by project name...",
+            key=f"project_search_{queue_type}",
+            help="Filter projects by name"
+        )
+    
+    # Add info about project visibility and category filtering
+    with col_info:
+        if st.session_state.current_user['role'] == "Admin":
+            st.info(f"👑 **Admin View**: Only {queue_type} projects are shown here. Projects appear only in their designated category.")
+        else:
+            st.info(f"👀 **Reviewer View**: Only {queue_type} projects are shown here. All users can see projects regardless of uploader.")
+    
+    # Filter files for this queue type - show ALL projects to ALL users
+    # Fixed: Only show projects that exactly match the queue type (category)
+    queue_files = {}
+    for k, v in st.session_state.uploaded_files.items():
+        parts = k.split('_')
+        if len(parts) > 0 and parts[0] == queue_type:
+            queue_files[k] = v
+    
+    if not queue_files:
+        st.info(f"📭 No projects available in {queue_type} queue")
+        if st.session_state.current_user['role'] == "Admin":
+            if st.button("📤 Upload First Project", type="primary"):
+                navigate_to('upload')
+        return
+    
+    # Group by project
+    projects = {}
+    for k, df in queue_files.items():
+        parts = k.split('_')
+        project_name = parts[1]
+        priority = parts[2] if len(parts) > 3 else 'medium'
+        
+        # Extract date from file key as fallback
+        date_str = parts[-1].split('_')[0] if '_' in parts[-1] and len(parts[-1].split('_')[0]) == 8 else "00000000"
+        try:
+            if len(date_str) == 8 and date_str.isdigit():
+                fallback_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+            else:
+                fallback_date = "Unknown"
+        except (ValueError, IndexError):
+            fallback_date = "Unknown"
+        
+        # Use actual upload_date from dataframe if available, otherwise use fallback
+        if 'upload_date' in df.columns and not df['upload_date'].empty:
+            formatted_date = df['upload_date'].iloc[0]
+        else:
+            formatted_date = fallback_date
+        
+        # Ensure claim columns exist
+        if 'claimed_by' not in df.columns:
+            df['claimed_by'] = ''
+        if 'claimed_date' not in df.columns:
+            df['claimed_date'] = ''
+        if 'project_status' not in df.columns:
+            df['project_status'] = 'Available'
+        
+        if project_name not in projects:
+            projects[project_name] = {
+                'files': [],
+                'priority': priority,
+                'total': 0,
+                'reviewed': 0,
+                'gmv': 0,
+                'uploader': df['uploader'].iloc[0] if 'uploader' in df.columns else "Unknown",
+                'date': formatted_date,
+                'claimed_by': df['claimed_by'].iloc[0] if 'claimed_by' in df.columns and not df['claimed_by'].iloc[0] == '' else None,
+                'claimed_date': df['claimed_date'].iloc[0] if 'claimed_date' in df.columns and not df['claimed_date'].iloc[0] == '' else None,
+                'project_status': df['project_status'].iloc[0] if 'project_status' in df.columns else 'Available'
+            }
+        
+        projects[project_name]['files'].append((k, df))
+        projects[project_name]['total'] += len(df)
+        projects[project_name]['reviewed'] += len(df[df['status'] == 'Reviewed'])
+        projects[project_name]['gmv'] += get_gmv_sum(df)
+
+    # Display projects in modern cards
+    cols = st.columns(2)
+    priority_colors = {'high': '#ef4444', 'medium': '#f59e0b', 'low': '#10b981'}
+    
+    # Sort projects by priority (high -> medium -> low)
+    priority_order = {'high': 3, 'medium': 2, 'low': 1}
+    sorted_projects = sorted(projects.items(), key=lambda x: priority_order.get(x[1]['priority'], 0), reverse=True)
+    
+    # Apply search filter if search query is provided
+    if search_query:
+        filtered_projects = []
+        for project_name, data in sorted_projects:
+            if search_query.lower() in project_name.lower():
+                filtered_projects.append((project_name, data))
+        sorted_projects = filtered_projects
+    
+    # Show search results info
+    if search_query:
+        if sorted_projects:
+            st.success(f"🔍 Found {len(sorted_projects)} project(s) matching '{search_query}'")
+        else:
+            st.warning(f"❌ No projects found matching '{search_query}'. Try a different search term.")
+            return
+    
+    for idx, (project_name, data) in enumerate(sorted_projects):
+        progress = (data['reviewed'] / data['total'] * 100) if data['total'] > 0 else 0
+        priority_color = priority_colors.get(data['priority'], '#6b7280')
+        
+        # Determine project status display
+        status_info = ""
+        if data.get('claimed_by'):
+            claimed_date = data.get('claimed_date', 'Unknown')
+            status_info = f"<p style='margin: 0.25rem 0;'><strong>🎯 Reviewing:</strong> {data['claimed_by']} (claimed {claimed_date})</p>"
+        else:
+            status_info = "<p style='margin: 0.25rem 0;'><strong>📌 Status:</strong> Available for review</p>"
+        
+        with cols[idx % 2]:
+            st.markdown(f"""
+                <div class="modern-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: var(--text-primary); font-weight: 600;">{project_name}</h4>
+                        <span style="background: {priority_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">
+                            {data['priority'].title()}
+                        </span>
+                    </div>
+                    <div style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">
+                        <p style="margin: 0.25rem 0;"><strong>Queue:</strong> {queue_type.title()}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Upload Date:</strong> {data['date']}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Uploader:</strong> {data['uploader']}</p>
+                        {status_info}
+                        <p style="margin: 0.25rem 0;"><strong>GMV:</strong> ${data['gmv']:,.2f}</p>
+                        <p style="margin: 0.25rem 0;"><strong>Progress:</strong> {data['reviewed']}/{data['total']} ({progress:.1f}%)</p>
+                    </div>
+                    <div style="margin-top: 1rem; margin-bottom: 1rem;">
+                        <div style="background-color: #e5e7eb; border-radius: 10px; height: 12px; border: 1px solid #d1d5db; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 100%; width: {progress}%; border-radius: 10px; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Action buttons inside the card area (but outside the HTML since Streamlit buttons need to be separate)
+            col_action1, col_action2 = st.columns(2)
+            
+            with col_action1:
+                if st.button("� Review", key=f"review_{project_name}", use_container_width=True):
+                    # Automatically claim the project when reviewing
+                    current_date = datetime.now().strftime("%Y-%m-%d")
+                    for file_key, df in data['files']:
+                        df['claimed_by'] = st.session_state.current_user['name']
+                        df['claimed_date'] = current_date
+                        df['project_status'] = 'Claimed'
+                        st.session_state.uploaded_files[file_key] = df
+                    save_session_state()
+                    refresh_session_state()
+                    
+                    st.session_state.selected_project = data['files'][0][0]  # First file key
+                    navigate_to(f"{queue_type}_review")
+            
+            with col_action2:
+                # Download option
+                first_file = data['files'][0][1]
+                csv = first_file.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    "📥 Download",
+                    data=csv,
+                    file_name=f"{project_name}.csv",
+                    mime="text/csv",
+                    key=f"download_{project_name}",
+                    use_container_width=True
+                )
+            
+            # Admin delete button (also inside the card)
+            if st.session_state.current_user['role'] == "Admin":
+                if st.button("🗑️ Delete Project", key=f"delete_{project_name}", type="secondary", use_container_width=True):
+                    # Show confirmation
+                    if f"confirm_delete_{project_name}" not in st.session_state:
+                        st.session_state[f"confirm_delete_{project_name}"] = True
+                        st.warning(f"⚠️ Are you sure you want to delete '{project_name}'? This action cannot be undone!")
+                        st.rerun()
+            
+            # Handle confirmation for project delete
+            if st.session_state.get(f"confirm_delete_{project_name}", False):
+                col_confirm1, col_confirm2 = st.columns([1, 1])
+                with col_confirm1:
+                    if st.button("❌ Cancel", key=f"cancel_{project_name}", use_container_width=True):
+                        del st.session_state[f"confirm_delete_{project_name}"]
+                        st.rerun()
+                with col_confirm2:
+                    if st.button("✅ Delete", key=f"confirm_btn_{project_name}", type="primary", use_container_width=True):
+                        # Delete all files for this project
+                        for file_key, _ in data['files']:
+                            if file_key in st.session_state.uploaded_files:
+                                del st.session_state.uploaded_files[file_key]
+                        
+                        # Save the updated state
+                        save_session_state()
+                        
+                        # Refresh to ensure immediate visibility across users
+                        refresh_session_state()
+                        
+                        # Clean up confirmation state
+                        if f"confirm_delete_{project_name}" in st.session_state:
+                            del st.session_state[f"confirm_delete_{project_name}"]
+                        
+                        st.success(f"✅ Project '{project_name}' deleted!")
+                        time.sleep(1)
+                        st.rerun()
+
+def handle_file_upload(uploaded_file, queue_type, project_title, priority="medium"):
+    if uploaded_file is not None:
+        try:
+            # Reset file pointer to beginning
+            uploaded_file.seek(0)
+            
+            # Read the file content to check if it's empty
+            content = uploaded_file.read()
+            if not content or len(content.strip()) == 0:
+                st.error("❌ The uploaded file is empty. Please upload a file with data.")
+                return False
+            
+            # Reset file pointer again for pandas to read
+            uploaded_file.seek(0)
+            
+            # Try to read with different parameters to handle various CSV formats
+            try:
+                df = pd.read_csv(uploaded_file)
+            except pd.errors.EmptyDataError:
+                st.error("❌ The CSV file contains no data or has no columns.")
+                return False
+            except pd.errors.ParserError as pe:
+                st.error(f"❌ Error parsing CSV file: {str(pe)}")
+                return False
+            
+            # Check if dataframe is empty
+            if df.empty:
+                st.error("❌ The CSV file contains no data rows.")
+                return False
+            
+            # Check if dataframe has no columns
+            if len(df.columns) == 0:
+                st.error("❌ The CSV file has no columns. Please ensure the file has proper headers.")
+                return False
+            
+            current_time = datetime.now()
+            
+            # Add metadata columns
+            df['upload_date'] = current_time.strftime("%Y-%m-%d")
+            df['status'] = 'Pending Review'
+            df['uploader'] = st.session_state.current_user['name']
+            df['reviewer'] = ''
+            df['review_date'] = ''
+            df['comments'] = ''
+            df['priority'] = priority
+            
+            # Handle GMV - ensure we have a standardized GMV column
+            st.subheader("🔍 GMV Column Detection")
+            gmv_col = find_gmv_column(df)
+            if gmv_col and gmv_col != 'GMV':
+                # Copy the GMV column to standardized name and keep original
+                try:
+                    df['GMV'] = pd.to_numeric(df[gmv_col], errors='coerce').fillna(0)
+                    st.success(f"✅ Copied '{gmv_col}' to standardized 'GMV' column")
+                except Exception as e:
+                    st.error(f"❌ Error processing GMV column {gmv_col}: {e}")
+                    df['GMV'] = 0.0
+            elif not gmv_col:
+                # No GMV column found, create one with zeros
+                df['GMV'] = 0.0
+                st.warning("⚠️ No GMV column found - created 'GMV' column with zeros")
+            else:
+                # GMV column exists, ensure it's numeric
+                try:
+                    df['GMV'] = pd.to_numeric(df['GMV'], errors='coerce').fillna(0)
+                    st.success("✅ Existing 'GMV' column processed and validated")
+                except Exception as e:
+                    st.error(f"❌ Error processing existing GMV column: {e}")
+                    df['GMV'] = 0.0
+
+            formatted_date = current_time.strftime('%Y%m%d_%H%M%S')
+            file_key = f"{queue_type}_{project_title}_{priority}_{formatted_date}"
+            
+            st.session_state.uploaded_files[file_key] = df
+            save_session_state()
+            
+            # Refresh to ensure immediate visibility across users  
+            refresh_session_state()
+            
+            return True
+        except Exception as e:
+            st.error(f"❌ Error uploading file: {str(e)}")
+            st.error("Please ensure your file is a valid CSV with proper headers and data.")
+            return False
+    return False
+
+def show_upload_page():
+    if st.session_state.current_user['role'] != "Admin":
+        st.error("🚫 Access denied. Admins only.")
+        return
+    
+    show_back_button('upload')
+    st.header("📤 Upload New Project")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
+        st.subheader("📁 Project Details")
+        
+        project_title = st.text_input(
+            "📝 Project Title:",
+            placeholder="Enter a descriptive project title"
+        )
+        
+        uploaded_file = st.file_uploader(
+            "📄 Upload CSV File:",
+            type="csv",
+            help="Select a CSV file containing FIDO data"
+        )
+        
+        if uploaded_file:
+            st.success("✅ File loaded successfully!")
+            # Show file preview
+            try:
+                # Reset file pointer for preview
+                uploaded_file.seek(0)
+                
+                # Check if file has content
+                content = uploaded_file.read()
+                if not content or len(content.strip()) == 0:
+                    st.warning("⚠️ The uploaded file appears to be empty.")
+                else:
+                    # Reset file pointer for pandas
+                    uploaded_file.seek(0)
+                    
+                    # Try to preview the file
+                    try:
+                        preview_df = pd.read_csv(uploaded_file)
+                        if preview_df.empty:
+                            st.warning("⚠️ The CSV file contains no data rows.")
+                        elif len(preview_df.columns) == 0:
+                            st.warning("⚠️ The CSV file has no columns.")
+                        else:
+                            st.markdown("**File Preview:**")
+                            st.dataframe(preview_df.head(), use_container_width=True)
+                            st.info(f"📊 File contains {len(preview_df)} rows and {len(preview_df.columns)} columns")
+                    except pd.errors.EmptyDataError:
+                        st.warning("⚠️ The CSV file contains no data or has no columns.")
+                    except pd.errors.ParserError as pe:
+                        st.warning(f"⚠️ Error parsing CSV file: {str(pe)}")
+                        
+                # Reset file pointer for final upload
+                uploaded_file.seek(0)
+            except Exception as e:
+                st.warning(f"⚠️ Could not preview file: {str(e)}")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="modern-card">', unsafe_allow_html=True)
+        st.subheader("⚙️ Settings")
+        
+        queue_type = st.selectbox(
+            "📋 Queue Type:",
+            ["Non-licensed", "Licensed", "CATQ"],
+            help="Select the appropriate queue for this project"
+        )
+        
+        priority = st.select_slider(
+            "🎯 Priority Level:",
+            options=["low", "medium", "high"],
+            value="medium",
+            format_func=lambda x: f"{'🟢' if x=='low' else '🟡' if x=='medium' else '🔴'} {x.title()} Priority"
+        )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Upload button
+        if st.button("🚀 Upload Project", type="primary", use_container_width=True):
+            if uploaded_file and project_title:
+                queue_mapping = {
+                    "Non-licensed": "nonlicensed",
+                    "Licensed": "licensed", 
+                    "CATQ": "catq"
+                }
+                
+                mapped_queue_type = queue_mapping[queue_type]
+                if handle_file_upload(uploaded_file, mapped_queue_type, project_title, priority):
+                    st.success(f"🎉 Project '{project_title}' uploaded successfully to {queue_type} queue!")
+                    time.sleep(2)
+                    st.rerun()
+            else:
+                st.error("❌ Please provide both project title and file")
 
 def show_analytics_page():
     if st.session_state.current_user['role'] != "Admin":
@@ -2329,8 +2731,6 @@ if st.session_state.current_user:
         show_upload_page()
     elif current_page == 'analytics':
         show_analytics_page()
-    elif current_page == 'admin':
-        show_admin_page()
     elif current_page in ['nonlicensed', 'licensed', 'catq']:
         show_project_selection_page(current_page)
     elif current_page.endswith('_review'):
