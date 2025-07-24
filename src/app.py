@@ -1826,35 +1826,27 @@ def main():
         initial_sidebar_state="expanded"
     )
 
-    # Add custom CSS for modern styling
-    st.markdown("""
+    # Initialize theme in session state
+    if 'theme_mode' not in st.session_state:
+        st.session_state.theme_mode = 'light'  # Default to light mode
+
+    # Add custom CSS for modern styling with theme support
+    st.markdown(f"""
         <style>
         /* Import modern font */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
         /* Global styles */
-        .stApp {
+        .stApp {{
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
             min-height: 100vh;
             transition: all 0.3s ease;
-        }
+        }}
         
         /* CSS Variables for theming */
-        :root {
-            --bg-primary: #667eea;
-            --bg-secondary: #764ba2;
-            --card-bg: rgba(255, 255, 255, 0.1);
-            --card-hover-bg: rgba(255, 255, 255, 0.15);
-            --text-primary: #ffffff;
-            --text-secondary: #ffffff;
-            --text-muted: #e2e8f0;
-            --border-color: rgba(255, 255, 255, 0.2);
-            --input-bg: rgba(255, 255, 255, 0.7);
-            --input-focus-bg: rgba(255, 255, 255, 0.9);
-        }
-        
-        [data-theme="light"] {
+        :root {{
+            /* Light theme (default) */
             --bg-primary: #f8fafc;
             --bg-secondary: #e2e8f0;
             --card-bg: rgba(255, 255, 255, 0.9);
@@ -1865,10 +1857,60 @@ def main():
             --border-color: #e2e8f0;
             --input-bg: rgba(255, 255, 255, 0.9);
             --input-focus-bg: rgba(255, 255, 255, 1);
-        }
+            --input-text-color: #1a202c;
+            --header-text-color: #1a202c;
+        }}
+        
+        [data-theme="dark"] {{
+            /* Dark theme */
+            --bg-primary: #667eea;
+            --bg-secondary: #764ba2;
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-hover-bg: rgba(255, 255, 255, 0.15);
+            --text-primary: #ffffff;
+            --text-secondary: #ffffff;
+            --text-muted: #e2e8f0;
+            --border-color: rgba(255, 255, 255, 0.2);
+            --input-bg: rgba(255, 255, 255, 0.7);
+            --input-focus-bg: rgba(255, 255, 255, 0.9);
+            --input-text-color: #1a202c;
+            --header-text-color: #ffffff;
+        }}
+        
+        /* Center the main title */
+        .main-title {{
+            text-align: center;
+            color: var(--header-text-color);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }}
+        
+        /* Theme toggle button */
+        .theme-toggle {{
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }}
+        
+        .theme-toggle:hover {{
+            background: var(--card-hover-bg);
+            transform: scale(1.05);
+        }}
         
         /* Modern card styles */
-        .modern-card {
+        .modern-card {{
             background: var(--card-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -1878,16 +1920,16 @@ def main():
             margin-bottom: 1.5rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
-        }
+        }}
         
-        .modern-card:hover {
+        .modern-card:hover {{
             background: var(--card-hover-bg);
             transform: translateY(-2px);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-        }
+        }}
         
         /* Stats cards */
-        .stats-card {
+        .stats-card {{
             background: var(--card-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -1896,28 +1938,28 @@ def main():
             padding: 1.5rem;
             text-align: center;
             transition: all 0.3s ease;
-        }
+        }}
         
-        .stats-card:hover {
+        .stats-card:hover {{
             transform: translateY(-3px);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
+        }}
         
-        .stats-number {
+        .stats-number {{
             font-size: 2rem;
             font-weight: 700;
             color: var(--text-primary);
             margin-bottom: 0.5rem;
-        }
+        }}
         
-        .stats-label {
+        .stats-label {{
             font-size: 0.9rem;
             color: var(--text-secondary);
             font-weight: 500;
-        }
+        }}
         
         /* FIDO review cards */
-        .fido-card {
+        .fido-card {{
             background: var(--card-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -1926,29 +1968,29 @@ def main():
             padding: 1.5rem;
             margin-bottom: 1.5rem;
             transition: all 0.3s ease;
-        }
+        }}
         
-        .fido-card:hover {
+        .fido-card:hover {{
             background: var(--card-hover-bg);
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        }
+        }}
         
-        .fido-header {
+        .fido-header {{
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1rem;
             padding-bottom: 0.75rem;
             border-bottom: 1px solid var(--border-color);
-        }
+        }}
         
-        .fido-title {
+        .fido-title {{
             margin: 0;
             color: var(--text-primary);
             font-weight: 600;
-        }
+        }}
         
-        .share-link {
+        .share-link {{
             background: rgba(102, 126, 234, 0.2);
             color: var(--text-primary);
             padding: 0.5rem 1rem;
@@ -1957,136 +1999,167 @@ def main():
             cursor: pointer;
             transition: all 0.2s ease;
             border: 1px solid rgba(102, 126, 234, 0.3);
-        }
+        }}
         
-        .share-link:hover {
+        .share-link:hover {{
             background: rgba(102, 126, 234, 0.3);
             transform: translateY(-1px);
-        }
+        }}
         
-        .fido-content {
+        .fido-content {{
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
-        }
+        }}
         
-        .fido-field {
+        .fido-field {{
             display: flex;
             justify-content: space-between;
             padding: 0.5rem 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
+        }}
         
-        .fido-field strong {
+        .fido-field strong {{
             color: var(--text-primary);
             font-weight: 500;
             margin-right: 1rem;
-        }
+        }}
         
-        .fido-field span {
+        .fido-field span {{
             color: var(--text-secondary);
             text-align: right;
             flex: 1;
-        }
+        }}
         
-        .fido-status {
+        .fido-status {{
             padding: 0.25rem 0.75rem;
             border-radius: 6px;
             font-size: 0.8rem;
             font-weight: 500;
-        }
+        }}
         
-        .status-pending {
+        .status-pending {{
             background: rgba(249, 115, 22, 0.2);
             color: #f97316;
             border: 1px solid rgba(249, 115, 22, 0.3);
-        }
+        }}
         
-        .status-reviewed {
+        .status-reviewed {{
             background: rgba(34, 197, 94, 0.2);
             color: #22c55e;
             border: 1px solid rgba(34, 197, 94, 0.3);
-        }
+        }}
         
-        .review-actions {
+        .review-actions {{
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
             padding: 1.5rem;
             margin-top: 1rem;
             border: 1px solid var(--border-color);
-        }
+        }}
         
-        /* Input styling */
+        /* Input styling - Fixed for all inputs including login */
         .stTextInput > div > div > input,
         .stTextArea > div > div > textarea,
-        .stSelectbox > div > div > div {
+        .stSelectbox > div > div > div,
+        .stTextInput input,
+        .stTextArea textarea {{
             background: var(--input-bg) !important;
             border: 1px solid var(--border-color) !important;
             border-radius: 8px !important;
-            color: #1a202c !important;
-        }
+            color: var(--input-text-color) !important;
+        }}
         
         .stTextInput > div > div > input:focus,
-        .stTextArea > div > div > textarea:focus {
+        .stTextArea > div > div > textarea:focus,
+        .stTextInput input:focus,
+        .stTextArea textarea:focus {{
             background: var(--input-focus-bg) !important;
             border-color: #667eea !important;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
-            color: #1a202c !important;
-        }
+            color: var(--input-text-color) !important;
+        }}
         
         /* Placeholder text styling */
         .stTextInput > div > div > input::placeholder,
-        .stTextArea > div > div > textarea::placeholder {
+        .stTextArea > div > div > textarea::placeholder,
+        .stTextInput input::placeholder,
+        .stTextArea textarea::placeholder {{
             color: #718096 !important;
             opacity: 0.7;
-        }
+        }}
         
         /* Button styling */
-        .stButton > button {
+        .stButton > button {{
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
             border-radius: 8px;
             color: white;
             font-weight: 500;
             transition: all 0.3s ease;
-        }
+        }}
         
-        .stButton > button:hover {
+        .stButton > button:hover {{
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
+        }}
         
         /* Sidebar styling */
-        .css-1d391kg {
+        .css-1d391kg {{
             background: var(--card-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-        }
+        }}
         
         /* Hide Streamlit branding */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
+        #MainMenu {{visibility: hidden;}}
+        footer {{visibility: hidden;}}
+        header {{visibility: hidden;}}
         
         /* Custom scrollbar */
-        ::-webkit-scrollbar {
+        ::-webkit-scrollbar {{
             width: 8px;
-        }
+        }}
         
-        ::-webkit-scrollbar-track {
+        ::-webkit-scrollbar-track {{
             background: rgba(255, 255, 255, 0.1);
             border-radius: 4px;
-        }
+        }}
         
-        ::-webkit-scrollbar-thumb {
+        ::-webkit-scrollbar-thumb {{
             background: rgba(255, 255, 255, 0.3);
             border-radius: 4px;
-        }
+        }}
         
-        ::-webkit-scrollbar-thumb:hover {
+        ::-webkit-scrollbar-thumb:hover {{
             background: rgba(255, 255, 255, 0.5);
-        }
+        }}
         </style>
+        
+        <script>
+        function toggleTheme() {{
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            
+            // Store theme preference
+            localStorage.setItem('theme', newTheme);
+        }}
+        
+        // Apply saved theme on load
+        document.addEventListener('DOMContentLoaded', function() {{
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }});
+        </script>
+    """, unsafe_allow_html=True)
+
+    # Apply current theme to document
+    theme_attr = 'dark' if st.session_state.theme_mode == 'dark' else 'light'
+    st.markdown(f"""
+        <script>
+        document.documentElement.setAttribute('data-theme', '{theme_attr}');
+        </script>
     """, unsafe_allow_html=True)
 
     # Initialize session state
@@ -2116,8 +2189,16 @@ def main():
     if needs_update:
         save_session_state()
 
-    # Set the title of the app
-    st.title("🚀 Welcome to FIDO Review Tool")
+    # Theme toggle button
+    col_theme, col_spacer = st.columns([1, 10])
+    with col_theme:
+        current_theme_icon = "🌙" if st.session_state.theme_mode == 'light' else "☀️"
+        if st.button(f"{current_theme_icon}", key="theme_toggle", help="Toggle light/dark mode"):
+            st.session_state.theme_mode = 'dark' if st.session_state.theme_mode == 'light' else 'light'
+            st.rerun()
+
+    # Set the title of the app with centered styling
+    st.markdown('<h1 class="main-title">🚀 Welcome to FIDO Review Tool</h1>', unsafe_allow_html=True)
 
     # Initialize session state for user authentication and navigation
     if 'current_user' not in st.session_state:
