@@ -2148,6 +2148,3 @@ def main():
             show_reviewer_page(current_page.split('_')[0])
     else:
         show_login_panel()
-
-if __name__ == "__main__":
-    main()
