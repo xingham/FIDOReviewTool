@@ -1828,7 +1828,7 @@ def main():
 
     # Initialize theme in session state
     if 'theme_mode' not in st.session_state:
-        st.session_state.theme_mode = 'light'  # Default to light mode
+        st.session_state.theme_mode = 'light'  # Default to light mode (original purple theme)
 
     # Add custom CSS for modern styling with theme support
     st.markdown(f"""
@@ -1847,22 +1847,6 @@ def main():
         /* CSS Variables for theming */
         :root {{
             /* Light theme (default) */
-            --bg-primary: #f8fafc;
-            --bg-secondary: #e2e8f0;
-            --card-bg: rgba(255, 255, 255, 0.9);
-            --card-hover-bg: rgba(255, 255, 255, 1);
-            --text-primary: #1a202c;
-            --text-secondary: #4a5568;
-            --text-muted: #718096;
-            --border-color: #e2e8f0;
-            --input-bg: rgba(255, 255, 255, 0.9);
-            --input-focus-bg: rgba(255, 255, 255, 1);
-            --input-text-color: #1a202c;
-            --header-text-color: #1a202c;
-        }}
-        
-        [data-theme="dark"] {{
-            /* Dark theme */
             --bg-primary: #667eea;
             --bg-secondary: #764ba2;
             --card-bg: rgba(255, 255, 255, 0.1);
@@ -1874,6 +1858,22 @@ def main():
             --input-bg: rgba(255, 255, 255, 0.7);
             --input-focus-bg: rgba(255, 255, 255, 0.9);
             --input-text-color: #1a202c;
+            --header-text-color: #ffffff;
+        }}
+        
+        [data-theme="dark"] {{
+            /* Dark theme */
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --card-bg: rgba(30, 30, 50, 0.8);
+            --card-hover-bg: rgba(30, 30, 50, 0.9);
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+            --text-muted: #a0aec0;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --input-bg: rgba(20, 20, 30, 0.8);
+            --input-focus-bg: rgba(20, 20, 30, 0.9);
+            --input-text-color: #ffffff;
             --header-text-color: #ffffff;
         }}
         
@@ -2193,7 +2193,8 @@ def main():
     col_theme, col_spacer = st.columns([1, 10])
     with col_theme:
         current_theme_icon = "🌙" if st.session_state.theme_mode == 'light' else "☀️"
-        if st.button(f"{current_theme_icon}", key="theme_toggle", help="Toggle light/dark mode"):
+        theme_label = "Dark Mode" if st.session_state.theme_mode == 'light' else "Light Mode"
+        if st.button(f"{current_theme_icon}", key="theme_toggle", help=f"Switch to {theme_label}"):
             st.session_state.theme_mode = 'dark' if st.session_state.theme_mode == 'light' else 'light'
             st.rerun()
 
