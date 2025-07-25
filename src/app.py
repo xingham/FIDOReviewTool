@@ -2164,21 +2164,17 @@ def main():
             .stApp {{
                 background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
             }}
-            
             .main .block-container {{
                 background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
             }}
-            
             /* Override any Streamlit default backgrounds */
             .element-container, .stMarkdown, .stButton, .stSelectbox, .stTextInput {{
                 background: transparent !important;
             }}
-            
             /* Ensure text is visible in dark mode */
-            .stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {{
-                color: #ffffff !important;
+            .stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stTextInput, .stTextArea, .stSelectbox, .stButton, .main-title, .stats-label, .stats-number, .fido-title, .fido-field strong, .fido-field span, .fido-status, .review-actions, .modern-card, .stats-card, .fido-card {{
+                color: #f3f4f6 !important;
             }}
-            
             /* Input styling for dark mode */
             .stTextInput > div > div > input,
             .stTextArea > div > div > textarea,
@@ -2186,9 +2182,8 @@ def main():
                 background: rgba(20, 20, 30, 0.8) !important;
                 border: 1px solid rgba(255, 255, 255, 0.1) !important;
                 border-radius: 8px !important;
-                color: #ffffff !important;
+                color: #f3f4f6 !important;
             }}
-            
             /* Card backgrounds for dark mode */
             .modern-card, .stats-card, .fido-card {{
                 background: rgba(30, 30, 50, 0.8) !important;
