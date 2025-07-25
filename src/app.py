@@ -2171,23 +2171,52 @@ def main():
             .element-container, .stMarkdown, .stButton, .stSelectbox, .stTextInput {{
                 background: transparent !important;
             }}
-            /* Ensure text is visible in dark mode */
-            .stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stTextInput, .stTextArea, .stSelectbox, .stButton, .main-title, .stats-label, .stats-number, .fido-title, .fido-field strong, .fido-field span, .fido-status, .review-actions, .modern-card, .stats-card, .fido-card {{
-                color: #f3f4f6 !important;
+            /* Comprehensive text visibility for dark mode - target ALL possible text elements */
+            .stApp, .stApp *, .main, .main *, .block-container, .block-container *,
+            .stMarkdown, .stMarkdown *, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6,
+            .stTextInput, .stTextInput *, .stTextArea, .stTextArea *, .stSelectbox, .stSelectbox *, .stButton, .stButton *,
+            .main-title, .stats-label, .stats-number, .fido-title, .fido-field, .fido-field strong, .fido-field span, 
+            .fido-status, .review-actions, .modern-card, .stats-card, .fido-card,
+            div, span, p, h1, h2, h3, h4, h5, h6, label, strong, em, a, li, ul, ol,
+            .css-1629p8f, .css-1y4p8pa, .css-1cpxqw2, .css-1v0mbdj, .css-1n76uvr,
+            [data-testid="stMarkdownContainer"], [data-testid="stText"], [data-testid="element-container"] {{
+                color: #ffffff !important;
+            }}
+            /* Login form specific targeting */
+            .stForm, .stForm *, [data-testid="stForm"], [data-testid="stForm"] * {{
+                color: #ffffff !important;
+            }}
+            /* Sidebar text */
+            .css-1d391kg, .css-1d391kg *, section[data-testid="stSidebar"], section[data-testid="stSidebar"] * {{
+                color: #ffffff !important;
             }}
             /* Input styling for dark mode */
             .stTextInput > div > div > input,
             .stTextArea > div > div > textarea,
-            .stSelectbox > div > div > div {{
+            .stSelectbox > div > div > div,
+            input, textarea, select {{
                 background: rgba(20, 20, 30, 0.8) !important;
                 border: 1px solid rgba(255, 255, 255, 0.1) !important;
                 border-radius: 8px !important;
-                color: #f3f4f6 !important;
+                color: #ffffff !important;
             }}
             /* Card backgrounds for dark mode */
             .modern-card, .stats-card, .fido-card {{
                 background: rgba(30, 30, 50, 0.8) !important;
                 border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                color: #ffffff !important;
+            }}
+            /* Button text visibility */
+            .stButton > button, button {{
+                color: #ffffff !important;
+            }}
+            /* Metric labels and values */
+            [data-testid="metric-container"], [data-testid="metric-container"] * {{
+                color: #ffffff !important;
+            }}
+            /* Ensure no black text anywhere */
+            * {{
+                color: #ffffff !important;
             }}
             </style>
         """, unsafe_allow_html=True)
