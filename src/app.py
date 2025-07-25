@@ -1861,6 +1861,16 @@ def main():
             --header-text-color: #ffffff;
         }}
         
+        /* Global fallback to ensure text is ALWAYS visible - emergency override */
+        body, html, .stApp, .main, .block-container, div, span, p, h1, h2, h3, h4, h5, h6, label, a, li {{
+            color: #ffffff !important;
+        }}
+        
+        /* Streamlit specific emergency text visibility */
+        .stMarkdown, .stMarkdown *, [data-testid="stMarkdownContainer"], [data-testid="stMarkdownContainer"] * {{
+            color: #ffffff !important;
+        }}
+        
         [data-theme="dark"] {{
             /* Dark theme */
             --bg-primary: #1a1a2e;
@@ -2237,15 +2247,33 @@ def main():
                 background: transparent !important;
             }}
             
-            /* Ensure text is visible in light mode */
-            .stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {{
+            /* Comprehensive text visibility for light mode - target ALL possible text elements */
+            .stApp, .stApp *, .main, .main *, .block-container, .block-container *,
+            .stMarkdown, .stMarkdown *, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6,
+            .stTextInput, .stTextInput *, .stTextArea, .stTextArea *, .stSelectbox, .stSelectbox *, .stButton, .stButton *,
+            .main-title, .stats-label, .stats-number, .fido-title, .fido-field, .fido-field strong, .fido-field span, 
+            .fido-status, .review-actions, .modern-card, .stats-card, .fido-card,
+            div, span, p, h1, h2, h3, h4, h5, h6, label, strong, em, a, li, ul, ol,
+            .css-1629p8f, .css-1y4p8pa, .css-1cpxqw2, .css-1v0mbdj, .css-1n76uvr,
+            [data-testid="stMarkdownContainer"], [data-testid="stText"], [data-testid="element-container"] {{
+                color: #ffffff !important;
+            }}
+            
+            /* Login form specific targeting */
+            .stForm, .stForm *, [data-testid="stForm"], [data-testid="stForm"] * {{
+                color: #ffffff !important;
+            }}
+            
+            /* Sidebar text */
+            .css-1d391kg, .css-1d391kg *, section[data-testid="stSidebar"], section[data-testid="stSidebar"] * {{
                 color: #ffffff !important;
             }}
             
             /* Input styling for light mode */
             .stTextInput > div > div > input,
             .stTextArea > div > div > textarea,
-            .stSelectbox > div > div > div {{
+            .stSelectbox > div > div > div,
+            input, textarea, select {{
                 background: rgba(255, 255, 255, 0.7) !important;
                 border: 1px solid rgba(255, 255, 255, 0.2) !important;
                 border-radius: 8px !important;
@@ -2256,6 +2284,22 @@ def main():
             .modern-card, .stats-card, .fido-card {{
                 background: rgba(255, 255, 255, 0.1) !important;
                 border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                color: #ffffff !important;
+            }}
+            
+            /* Button text visibility */
+            .stButton > button, button {{
+                color: #ffffff !important;
+            }}
+            
+            /* Metric labels and values */
+            [data-testid="metric-container"], [data-testid="metric-container"] * {{
+                color: #ffffff !important;
+            }}
+            
+            /* Ensure all text is white in light mode */
+            * {{
+                color: #ffffff !important;
             }}
             </style>
         """, unsafe_allow_html=True)
